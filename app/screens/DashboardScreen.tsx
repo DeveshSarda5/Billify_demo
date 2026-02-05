@@ -88,7 +88,7 @@ export default function DashboardScreen({ navigation }: Props) {
                 </View>
 
                 {/* Help */}
-                <Pressable style={styles.helpCard} onPress={() => comingSoon('Help & Support')}>
+                <Pressable style={styles.helpCard} onPress={() => navigation.navigate('HelpSupport')}>
                     <View style={[styles.iconBox, { backgroundColor: '#6b7280' }]}>
                         <HelpCircle size={22} color="#fff" />
                     </View>

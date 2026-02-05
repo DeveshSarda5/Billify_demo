@@ -1,42 +1,37 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ChevronRight, CreditCard, Smartphone } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethods'>;
 
-const METHODS = [
-  { id: 'upi', label: 'UPI' },
-  { id: 'cod', label: 'Cash on Delivery' },
-  { id: 'card', label: 'Debit / Credit Card' },
-];
-
 export default function PaymentMethodsScreen({ navigation }: Props) {
-  const [selected, setSelected] = useState('upi');
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Payment Methods</Text>
 
-      {METHODS.map((method) => (
-        <Pressable
-          key={method.id}
-          style={[
-            styles.methodCard,
-            selected === method.id && styles.selected,
-          ]}
-          onPress={() => setSelected(method.id)}
-        >
-          <Text style={styles.methodText}>{method.label}</Text>
-        </Pressable>
-      ))}
+      <Pressable
+        style={styles.methodCard}
+        onPress={() => navigation.navigate('ManageUPI')}
+      >
+        <View style={styles.row}>
+          <Smartphone size={24} color="#4caf50" style={{ marginRight: 12 }} />
+          <Text style={styles.methodText}>Manage UPI IDs</Text>
+        </View>
+        <ChevronRight size={20} color="#9ca3af" />
+      </Pressable>
 
       <Pressable
-        style={styles.saveBtn}
-        onPress={() => navigation.goBack()}
+        style={styles.methodCard}
+        onPress={() => navigation.navigate('ManageCards')}
       >
-        <Text style={styles.saveText}>Save Preference</Text>
+        <View style={styles.row}>
+          <CreditCard size={24} color="#2196f3" style={{ marginRight: 12 }} />
+          <Text style={styles.methodText}>Manage Debit / Credit Cards</Text>
+        </View>
+        <ChevronRight size={20} color="#9ca3af" />
       </Pressable>
+
     </View>
   );
 }
@@ -54,29 +49,24 @@ const styles = StyleSheet.create({
   },
   methodCard: {
     backgroundColor: '#fff',
-    padding: 16,
+    padding: 20,
     borderRadius: 14,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  selected: {
-    borderColor: '#22c55e',
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   methodText: {
     fontSize: 16,
     fontWeight: '500',
-  },
-  saveBtn: {
-    marginTop: 'auto',
-    backgroundColor: '#4caf50',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  saveText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#1f2937',
   },
 });

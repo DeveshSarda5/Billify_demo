@@ -22,6 +22,8 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/bills', require('./src/routes/bill.routes'));
 app.use('/api/products', require('./src/routes/product.routes'));
+app.use('/api/payments', require('./src/routes/payment.routes'));
+app.use('/api/support', require('./src/routes/support.routes'));
 
 app.get('/', (req, res) => {
     res.send('Billify API is running...');

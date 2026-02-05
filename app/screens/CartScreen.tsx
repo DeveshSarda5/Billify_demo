@@ -1,11 +1,28 @@
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
-import { Plus, Minus, Trash2 } from 'lucide-react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, TextInput, Alert } from 'react-native';
+import { Plus, Minus, Trash2, Tag } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
 
 export default function CartScreen() {
   const { items, updateQty, removeItem, total } = useCart();
   const navigation = useNavigation<any>();
+  const [coupon, setCoupon] = useState('');
+  const [discount, setDiscount] = useState(0);
+
+  const applyCoupon = () => {
+    if (coupon.trim().toUpperCase() === 'SAVE50') {
+      setDiscount(50);
+      Alert.alert('Success', 'Coupon Applied! You saved ₹50');
+    } else if (coupon.trim().toUpperCase() === 'WELCOME10') {
+      const disc = Math.round(total * 0.1);
+      setDiscount(disc);
+      Alert.alert('Success', `Coupon Applied! You saved ₹${disc}`);
+    } else {
+      Alert.alert('Invalid Coupon', 'This coupon is not valid.');
+      setDiscount(0);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -14,6 +31,8 @@ export default function CartScreen() {
       </View>
     );
   }
+
+  const finalTotal = Math.max(0, total - discount);
 
   return (
     <View style={styles.container}>
@@ -65,11 +84,54 @@ export default function CartScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.total}>Total: ₹{total}</Text>
+        {/* Coupon Input */}
+        <View style={styles.couponRow}>
+          <View style={styles.couponInputContainer}>
+            <Tag size={18} color="#6b7280" style={{ marginRight: 8 }} />
+            <TextInput
+              placeholder="Enter Coupon Code"
+              style={styles.couponInput}
+              value={coupon}
+              onChangeText={setCoupon}
+              autoCapitalize="characters"
+            />
+          </View>
+          <Pressable style={styles.applyBtn} onPress={applyCoupon}>
+            <Text style={styles.applyText}>Apply</Text>
+          </Pressable>
+        </View>
+
+        {/* Available Coupons */}
+        <View style={styles.couponList}>
+          <Text style={styles.couponListTitle}>Available Coupons:</Text>
+          <View style={styles.couponItem}>
+            <Text style={styles.couponCode}>SAVE50</Text>
+            <Text style={styles.couponDesc}> - Flat ₹50 off</Text>
+          </View>
+          <View style={styles.couponItem}>
+            <Text style={styles.couponCode}>WELCOME10</Text>
+            <Text style={styles.couponDesc}> - 10% off on total</Text>
+          </View>
+        </View>
+
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Subtotal:</Text>
+          <Text style={styles.summaryValue}>₹{total}</Text>
+        </View>
+        {discount > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, { color: '#22c55e' }]}>Discount:</Text>
+            <Text style={[styles.summaryValue, { color: '#22c55e' }]}>-₹{discount}</Text>
+          </View>
+        )}
+        <View style={[styles.summaryRow, { marginTop: 8 }]}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalValue}>₹{finalTotal}</Text>
+        </View>
 
         <Pressable
           style={styles.payBtn}
-          onPress={() => navigation.navigate('Payment', { total })}
+          onPress={() => navigation.navigate('Payment', { total: finalTotal })}
         >
           <Text style={styles.payText}>Proceed to Pay</Text>
         </Pressable>
@@ -158,11 +220,91 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  total: {
+  /* Coupon */
+  couponRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 12,
+  },
+  couponInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  couponInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 16,
+  },
+  applyBtn: {
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  applyText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+
+  /* Available Coupons */
+  couponList: {
+    marginBottom: 16,
+    backgroundColor: '#f0fdf4',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  couponListTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#166534',
+    marginBottom: 4,
+  },
+  couponItem: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  couponCode: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+  couponDesc: {
+    fontSize: 12,
+    color: '#166534',
+  },
+
+  /* Summary */
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  summaryLabel: {
+    fontSize: 15,
+    color: '#6b7280',
+  },
+  summaryValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  totalLabel: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 12,
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1f2937',
   },
 
   payBtn: {
@@ -170,6 +312,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    marginTop: 16,
   },
 
   payText: {

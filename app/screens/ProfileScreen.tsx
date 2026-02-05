@@ -108,23 +108,28 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Settings</Text>
 
-                <Pressable style={styles.settingItem} onPress={() => comingSoon('Edit Profile')}>
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('EditProfile')}>
                     <Text style={styles.settingText}>Edit Profile</Text>
                     <ChevronRight size={20} color="#9ca3af" />
                 </Pressable>
 
-                <Pressable style={styles.settingItem} onPress={() => comingSoon('Change Password')}>
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('ChangePassword')}>
                     <Text style={styles.settingText}>Change Password</Text>
                     <ChevronRight size={20} color="#9ca3af" />
                 </Pressable>
 
-                <Pressable style={styles.settingItem} onPress={() => comingSoon('Notifications')}>
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('NotificationSettings')}>
                     <Text style={styles.settingText}>Notifications</Text>
                     <ChevronRight size={20} color="#9ca3af" />
                 </Pressable>
 
-                <Pressable style={styles.settingItem} onPress={() => comingSoon('Privacy Policy')}>
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
                     <Text style={styles.settingText}>Privacy Policy</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('HelpSupport')}>
+                    <Text style={styles.settingText}>Help & Support</Text>
                     <ChevronRight size={20} color="#9ca3af" />
                 </Pressable>
             </View>

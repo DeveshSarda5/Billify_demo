@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useEffect, useState } from 'react';
 import { billsAPI } from '../services/api';
+import { Trash2 } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PreviousBills'>;
 
@@ -32,6 +33,28 @@ export default function PreviousBillsScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      'Delete Bill',
+      'This bill will be deleted. Do you want to proceed?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await billsAPI.deleteBill(id);
+              setBills(prev => prev.filter(b => b._id !== id));
+            } catch (err: any) {
+              Alert.alert('Error', 'Failed to delete bill');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -71,19 +94,25 @@ export default function PreviousBillsScreen({ navigation }: Props) {
           data={bills}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <Pressable
-              style={styles.billCard}
-              onPress={() =>
-                navigation.navigate('BillDetails', { billId: item._id })
-              }
-            >
-              <View>
-                <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
-                <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
-              </View>
+            <View style={styles.billCard}>
+              <Pressable
+                style={styles.billInfo}
+                onPress={() =>
+                  navigation.navigate('BillDetails', { billId: item._id })
+                }
+              >
+                <View>
+                  <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
+                  <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+                </View>
 
-              <Text style={styles.amount}>₹{item.totalAmount}</Text>
-            </Pressable>
+                <Text style={styles.amount}>₹{item.totalAmount}</Text>
+              </Pressable>
+
+              <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
+                <Trash2 size={20} color="#ef4444" />
+              </Pressable>
+            </View>
           )}
         />
       )}
@@ -105,11 +134,20 @@ const styles = StyleSheet.create({
   billCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 16,
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 16, // Space for trash icon
+  },
+  billInfo: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 16,
+  },
+  deleteBtn: {
+    padding: 8,
   },
   billId: {
     fontWeight: '600',

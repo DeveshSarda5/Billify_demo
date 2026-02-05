@@ -1,53 +1,90 @@
-import { View, Text, StyleSheet, Pressable, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, Alert, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCart } from '../context/CartContext';
-import { billsAPI } from '../services/api';
+import { billsAPI, paymentAPI } from '../services/api';
+import RazorpayCheckout from 'react-native-razorpay';
+import { useAuth } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
-const UPI_OPTIONS = [
-  { id: 'gpay', label: 'Google Pay' },
-  { id: 'phonepe', label: 'PhonePe' },
-  { id: 'paytm', label: 'Paytm' },
-  { id: 'upi', label: 'Enter UPI ID' },
+const PAYMENT_OPTIONS = [
+  { id: 'razorpay', label: 'Online Payment (UPI/Card/Netbanking)' },
+  { id: 'cod', label: 'Cash at Counter' },
 ];
 
 export default function PaymentScreen({ route, navigation }: Props) {
   const total = route.params?.total ?? 0;
   const { items, clearCart } = useCart();
+  const { user } = useAuth();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  const processBillCreation = async (paymentId?: string) => {
+    try {
+      const billItems = items.map((item) => ({
+        productId: item.barcode,
+        name: item.name,
+        price: item.price,
+        quantity: item.qty ?? 1,
+      }));
+
+      await billsAPI.createBill({ items: billItems });
+
+      clearCart();
+      Alert.alert('Success', 'Bill generated successfully!');
+      navigation.navigate('ExitPass');
+    } catch (err: any) {
+      Alert.alert('Error', 'Payment successful but bill generation failed. Contact support.');
+    }
+  };
+
   const handlePayment = async () => {
     if (!selectedMethod || processing) return;
-
     setProcessing(true);
 
     try {
-      // ✅ SAFELY BUILD BILL ITEMS (NO UNDEFINED VALUES)
-      const billItems = items.map((item) => ({
-        productId: item.barcode,          // barcode used as productId (DEV)
-        name: item.name,
-        price: item.price,
-        quantity: item.qty ?? 1,          // 🔥 quantity is the field name on backend
-      }));
+      if (selectedMethod === 'razorpay') {
+        const { order } = await paymentAPI.createOrder(total);
 
-      // ✅ CREATE BILL IN BACKEND
-      await billsAPI.createBill({ items: billItems });
+        const options = {
+          description: 'Payment for Bill',
+          image: 'https://i.imgur.com/3g7nmJC.png',
+          currency: 'INR',
+          key: 'rzp_test_placeholder', // Should match backend
+          amount: order.amount,
+          name: 'Billify',
+          order_id: order.id,
+          prefill: {
+            email: user?.email,
+            contact: user?.phone,
+            name: user?.name,
+          },
+          theme: { color: '#4caf50' }
+        };
 
-      // ✅ SUCCESS
-      clearCart();
-      Alert.alert('Payment Successful', 'Your bill has been generated.');
-      navigation.navigate('ExitPass');
-    } catch (err: any) {
-      Alert.alert(
-        'Payment Failed',
-        err.message || 'Something went wrong. Please try again.'
-      );
+        const data = await RazorpayCheckout.open(options);
+
+        await paymentAPI.verifyPayment({
+          razorpay_order_id: data.razorpay_order_id,
+          razorpay_payment_id: data.razorpay_payment_id,
+          razorpay_signature: data.razorpay_signature,
+          amount: total
+        });
+
+        await processBillCreation(data.razorpay_payment_id);
+      } else {
+        await processBillCreation();
+      }
+    } catch (error: any) {
+      if (error.code === 0) {
+        Alert.alert('Cancelled', 'Payment was cancelled');
+      } else {
+        Alert.alert('Error', error.description || error.message || 'Payment failed');
+      }
     } finally {
       setProcessing(false);
     }
@@ -67,7 +104,9 @@ export default function PaymentScreen({ route, navigation }: Props) {
       <Pressable style={styles.methodCard} onPress={() => setShowModal(true)}>
         <Text style={styles.methodTitle}>Payment Method</Text>
         <Text style={styles.methodValue}>
-          {selectedMethod ?? 'Select UPI method'}
+          {selectedMethod
+            ? PAYMENT_OPTIONS.find(o => o.id === selectedMethod)?.label
+            : 'Select Payment Method'}
         </Text>
       </Pressable>
 
@@ -80,23 +119,27 @@ export default function PaymentScreen({ route, navigation }: Props) {
         disabled={!selectedMethod || processing}
         onPress={handlePayment}
       >
-        <Text style={styles.payText}>
-          {processing ? 'Processing...' : `Pay ₹${total}`}
-        </Text>
+        {processing ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.payText}>
+            {selectedMethod === 'cod' ? 'Generate Bill' : `Pay ₹${total}`}
+          </Text>
+        )}
       </Pressable>
 
-      {/* ---------- UPI MODAL ---------- */}
+      {/* ---------- METHOD MODAL ---------- */}
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Choose UPI</Text>
+            <Text style={styles.modalTitle}>Choose Payment Method</Text>
 
-            {UPI_OPTIONS.map((opt) => (
+            {PAYMENT_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.id}
                 style={styles.upiOption}
                 onPress={() => {
-                  setSelectedMethod(opt.label);
+                  setSelectedMethod(opt.id);
                   setShowModal(false);
                 }}
               >

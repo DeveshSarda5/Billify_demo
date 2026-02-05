@@ -13,6 +13,13 @@ import PreviousBillsScreen from '../screens/PreviousBillsScreen';
 import BillDetailsScreen from '../screens/BillDetailsScreen';
 import OffersScreen from '../screens/OffersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import ManageUPIScreen from '../screens/UpiManagementScreen';
+import ManageCardsScreen from '../screens/CardsScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -27,6 +34,13 @@ export type RootStackParamList = {
   BillDetails: { billId: string };
   Offers: undefined;
   Profile: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
+  NotificationSettings: undefined;
+  HelpSupport: undefined;
+  PrivacyPolicy: undefined;
+  ManageUPI: undefined;
+  ManageCards: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +69,13 @@ export default function AppNavigator() {
           <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
           <Stack.Screen name="Offers" component={OffersScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="ManageUPI" component={ManageUPIScreen} />
+          <Stack.Screen name="ManageCards" component={ManageCardsScreen} />
         </>
       )}
     </Stack.Navigator>
