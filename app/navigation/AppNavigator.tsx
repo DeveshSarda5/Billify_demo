@@ -12,6 +12,7 @@ import ExitPassScreen from '../screens/ExitPassScreen';
 import PreviousBillsScreen from '../screens/PreviousBillsScreen';
 import BillDetailsScreen from '../screens/BillDetailsScreen';
 import OffersScreen from '../screens/OffersScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -25,6 +26,7 @@ export type RootStackParamList = {
   PreviousBills: undefined;
   BillDetails: { billId: string };
   Offers: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -52,6 +54,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PreviousBills" component={PreviousBillsScreen} />
           <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
           <Stack.Screen name="Offers" component={OffersScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
         </>
       )}
     </Stack.Navigator>

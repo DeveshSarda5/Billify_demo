@@ -5,6 +5,8 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { ShoppingCart, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
@@ -16,8 +18,9 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -28,7 +31,20 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     setError('');
-    login();
+    setLoading(true);
+
+    try {
+      await login(email, password);
+
+      Alert.alert(
+        'Login Successful',
+        'Welcome back to Billify 👋'
+      );
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,6 +66,7 @@ export default function LoginScreen({ navigation }: any) {
           <TextInput
             placeholder="Email or Phone"
             style={styles.input}
+            autoCapitalize="none"
             value={email}
             onChangeText={(t) => {
               setEmail(t);
@@ -84,14 +101,22 @@ export default function LoginScreen({ navigation }: any) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {/* Login Button */}
-        <Pressable style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <Pressable
+          style={[styles.button, loading && { opacity: 0.7 }]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </Pressable>
       </View>
 
       {/* Switch */}
       <Text style={styles.switchText}>
-        Don’t have an account?{' '}
+        Don't have an account?{' '}
         <Text
           style={styles.link}
           onPress={() => navigation.navigate('Signup')}

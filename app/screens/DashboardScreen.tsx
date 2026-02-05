@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen({ navigation }: Props) {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
 
     const comingSoon = (feature: string) => {
         Alert.alert('Coming Soon', `${feature} will be available soon`);
@@ -27,7 +27,7 @@ export default function DashboardScreen({ navigation }: Props) {
             <View style={styles.header}>
                 <View>
                     <Text style={styles.title}>Billify</Text>
-                    <Text style={styles.subtitle}>Welcome back!</Text>
+                    <Text style={styles.subtitle}>Welcome back, {user?.name || 'Guest'}!</Text>
                 </View>
 
                 <Pressable style={styles.logoutBtn} onPress={logout}>
@@ -67,7 +67,7 @@ export default function DashboardScreen({ navigation }: Props) {
                         subtitle="Account settings"
                         icon={<User size={22} color="#fff" />}
                         color="#8b5cf6"
-                        onPress={() => comingSoon('Profile')}
+                        onPress={() => navigation.navigate('Profile')}
                     />
 
                     <ActionCard

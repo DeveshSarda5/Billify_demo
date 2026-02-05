@@ -1,17 +1,18 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ShoppingCart, ScanLine } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
+import { productsAPI } from '../services/api';
 
-/* Mock product DB (same as before) */
-const PRODUCT_CATALOG: Record<string, { name: string; price: number }> = {
-  '8901234567890': { name: 'Organic Milk 1L', price: 65 },
-  '8901234567891': { name: 'Whole Wheat Bread', price: 45 },
-  '8901234567892': { name: 'Fresh Apple 1kg', price: 120 },
-  '8901234567893': { name: 'Basmati Rice 5kg', price: 450 },
-  '8901234567894': { name: 'Extra Virgin Olive Oil', price: 650 },
+/* =======================
+   DEV TEST PRODUCT
+======================= */
+const DEV_PRODUCT = {
+  barcode: 'DEV-001',
+  name: 'Test Shampoo',
+  price: 199,
 };
 
 export default function ScanScreen() {
@@ -21,7 +22,9 @@ export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  /* --- Permission handling --- */
+  /* =======================
+     PERMISSION HANDLING
+  ======================= */
   if (!permission) return <View />;
 
   if (!permission.granted) {
@@ -37,27 +40,38 @@ export default function ScanScreen() {
     );
   }
 
-  /* --- Barcode handler --- */
-  const handleScan = ({ data }: { data: string }) => {
+  /* =======================
+     BARCODE HANDLER
+  ======================= */
+  const handleScan = async ({ data }: { data: string }) => {
     if (scanned) return;
 
-    console.log('SCANNED:', data);
-
-    const product = PRODUCT_CATALOG[data] ?? {
-      name: 'Unknown Item',
-      price: 99,
-    };
-
-    addItem({
-      barcode: data,
-      name: product.name,
-      price: product.price,
-    });
-
     setScanned(true);
-    setTimeout(() => setScanned(false), 1200);
+
+    try {
+      const product = await productsAPI.getProductByBarcode(data);
+
+      addItem({
+        barcode: data,
+        name: product.name,
+        price: product.price,
+      });
+
+      Alert.alert('✓ Added to Cart', `${product.name} - ₹${product.price}`);
+    } catch (err: any) {
+      if (err.message === 'Product not found') {
+        Alert.alert('Product Not Found', 'This product is not in our database.');
+      } else {
+        Alert.alert('Error', 'Failed to fetch product. Please try again.');
+      }
+    } finally {
+      setTimeout(() => setScanned(false), 1200);
+    }
   };
 
+  /* =======================
+     UI
+  ======================= */
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -83,7 +97,6 @@ export default function ScanScreen() {
       {/* Scan Area */}
       <View style={styles.scanArea}>
         <View style={styles.scanBox}>
-          {/* LIVE CAMERA */}
           <CameraView
             style={StyleSheet.absoluteFillObject}
             onBarcodeScanned={handleScan}
@@ -92,7 +105,6 @@ export default function ScanScreen() {
             }}
           />
 
-          {/* UI FRAME (non-blocking) */}
           <View style={styles.frame}>
             <View style={styles.scanLine} />
             <ScanLine size={56} color="#4caf50" />
@@ -102,6 +114,22 @@ export default function ScanScreen() {
             </Text>
           </View>
         </View>
+      </View>
+
+      {/* DEV ONLY BUTTON */}
+      <View style={styles.devWrapper}>
+        <Pressable
+          onPress={() => {
+            addItem(DEV_PRODUCT);
+            Alert.alert(
+              'DEV Item Added',
+              `${DEV_PRODUCT.name} - ₹${DEV_PRODUCT.price}`
+            );
+          }}
+          style={styles.devBtn}
+        >
+          <Text style={styles.devText}>➕ Add Test Item (DEV)</Text>
+        </Pressable>
       </View>
 
       {/* Instructions */}
@@ -121,10 +149,12 @@ export default function ScanScreen() {
   );
 }
 
+/* =======================
+   STYLES
+======================= */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
 
-  /* Permission */
   permission: {
     flex: 1,
     justifyContent: 'center',
@@ -148,7 +178,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  /* Header */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -178,7 +207,6 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
-  /* Scan */
   scanArea: {
     flex: 1,
     justifyContent: 'center',
@@ -222,7 +250,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* Instructions */
+  devWrapper: {
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  devBtn: {
+    backgroundColor: '#e5e7eb',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  devText: {
+    fontWeight: '600',
+    color: '#111827',
+  },
+
   instructions: {
     padding: 20,
     backgroundColor: '#f8f7f4',

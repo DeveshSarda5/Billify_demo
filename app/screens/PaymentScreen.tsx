@@ -1,7 +1,9 @@
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, Alert } from 'react-native';
 import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useCart } from '../context/CartContext';
+import { billsAPI } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -14,14 +16,48 @@ const UPI_OPTIONS = [
 
 export default function PaymentScreen({ route, navigation }: Props) {
   const total = route.params?.total ?? 0;
+  const { items, clearCart } = useCart();
+
   const [showModal, setShowModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  const handlePayment = async () => {
+    if (!selectedMethod || processing) return;
+
+    setProcessing(true);
+
+    try {
+      // ✅ SAFELY BUILD BILL ITEMS (NO UNDEFINED VALUES)
+      const billItems = items.map((item) => ({
+        productId: item.barcode,          // barcode used as productId (DEV)
+        name: item.name,
+        price: item.price,
+        quantity: item.qty ?? 1,          // 🔥 quantity is the field name on backend
+      }));
+
+      // ✅ CREATE BILL IN BACKEND
+      await billsAPI.createBill({ items: billItems });
+
+      // ✅ SUCCESS
+      clearCart();
+      Alert.alert('Payment Successful', 'Your bill has been generated.');
+      navigation.navigate('ExitPass');
+    } catch (err: any) {
+      Alert.alert(
+        'Payment Failed',
+        err.message || 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Payment</Text>
 
-      {/* Amount */}
+      {/* Amount Card */}
       <View style={styles.amountCard}>
         <Text style={styles.amountLabel}>Amount to Pay</Text>
         <Text style={styles.amount}>₹{total}</Text>
@@ -39,12 +75,14 @@ export default function PaymentScreen({ route, navigation }: Props) {
       <Pressable
         style={[
           styles.payBtn,
-          !selectedMethod && { opacity: 0.5 },
+          (!selectedMethod || processing) && { opacity: 0.5 },
         ]}
-        disabled={!selectedMethod}
-        onPress={() => navigation.navigate('ExitPass')}
+        disabled={!selectedMethod || processing}
+        onPress={handlePayment}
       >
-        <Text style={styles.payText}>Pay ₹{total}</Text>
+        <Text style={styles.payText}>
+          {processing ? 'Processing...' : `Pay ₹${total}`}
+        </Text>
       </Pressable>
 
       {/* ---------- UPI MODAL ---------- */}

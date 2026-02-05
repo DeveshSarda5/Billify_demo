@@ -5,6 +5,8 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
@@ -19,8 +21,9 @@ export default function SignupScreen({ navigation }: any) {
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name || !email || !phone || !password || !confirm) {
       setError('Please fill in all fields');
       return;
@@ -35,7 +38,20 @@ export default function SignupScreen({ navigation }: any) {
     }
 
     setError('');
-    signup();
+    setLoading(true);
+
+    try {
+      await signup({ name, email, phone, password });
+
+      Alert.alert(
+        'Signup Successful 🎉',
+        'Your Billify account has been created'
+      );
+    } catch (err: any) {
+      setError(err.message || 'Signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,7 +64,10 @@ export default function SignupScreen({ navigation }: any) {
           placeholder="Full Name"
           style={styles.input}
           value={name}
-          onChangeText={setName}
+          onChangeText={(t) => {
+            setName(t);
+            setError('');
+          }}
         />
       </View>
 
@@ -57,8 +76,12 @@ export default function SignupScreen({ navigation }: any) {
         <TextInput
           placeholder="Email"
           style={styles.input}
+          autoCapitalize="none"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(t) => {
+            setEmail(t);
+            setError('');
+          }}
         />
       </View>
 
@@ -69,7 +92,10 @@ export default function SignupScreen({ navigation }: any) {
           style={styles.input}
           keyboardType="phone-pad"
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={(t) => {
+            setPhone(t);
+            setError('');
+          }}
         />
       </View>
 
@@ -80,10 +106,13 @@ export default function SignupScreen({ navigation }: any) {
           style={styles.input}
           secureTextEntry={!showPassword}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(t) => {
+            setPassword(t);
+            setError('');
+          }}
         />
         <Pressable onPress={() => setShowPassword(!showPassword)}>
-          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          {showPassword ? <EyeOff size={20} color="#6b7280" /> : <Eye size={20} color="#6b7280" />}
         </Pressable>
       </View>
 
@@ -94,14 +123,25 @@ export default function SignupScreen({ navigation }: any) {
           style={styles.input}
           secureTextEntry={!showPassword}
           value={confirm}
-          onChangeText={setConfirm}
+          onChangeText={(t) => {
+            setConfirm(t);
+            setError('');
+          }}
         />
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Pressable style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <Pressable
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign Up</Text>
+        )}
       </Pressable>
 
       <Text style={styles.switchText} onPress={() => navigation.goBack()}>
@@ -140,6 +180,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 10,
+    marginBottom: 12,
   },
   input: { flex: 1 },
   error: {
