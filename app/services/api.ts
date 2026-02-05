@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const BASE_URL = 'http://10.10.36.126:5000/api'; // 👈 laptop IP
+const BASE_URL = 'http://10.252.194.139:5000/api'; // 👈 laptop IP (updated)
 
 async function getHeaders(includeAuth = true): Promise<HeadersInit> {
     const headers: HeadersInit = {
