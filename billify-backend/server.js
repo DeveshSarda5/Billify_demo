@@ -21,6 +21,15 @@ app.get('/', (req, res) => {
     res.send('Billify API is running...');
 });
 
+// Error Handler
+app.use((err, req, res, next) => {
+    console.error('🔥 Error Caught By Handler:', err);
+    res.status(500).json({
+        message: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    });
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
