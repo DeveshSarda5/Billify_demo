@@ -2,9 +2,12 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ShoppingCart, ScanLine } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
+import { useLocation } from '../context/LocationContext';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { productsAPI } from '../services/api';
+import LocationHeader from '../components/LocationHeader';
+import { findProductByBarcode } from '../constants/storeInventory';
 
 /* =======================
    DEV TEST PRODUCT
@@ -17,6 +20,7 @@ const DEV_PRODUCT = {
 
 export default function ScanScreen() {
   const { items, addItem } = useCart();
+  const { currentStore } = useLocation();
   const navigation = useNavigation<any>();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -49,6 +53,24 @@ export default function ScanScreen() {
     setScanned(true);
 
     try {
+      // First, try to find product in store-specific inventory
+      if (currentStore?.id) {
+        const storeProduct = findProductByBarcode(data, currentStore.id);
+        
+        if (storeProduct) {
+          addItem({
+            barcode: data,
+            name: storeProduct.name,
+            price: storeProduct.price,
+          });
+
+          Alert.alert('✓ Added to Cart', `${storeProduct.name} - ₹${storeProduct.price}`);
+          setTimeout(() => setScanned(false), 1200);
+          return;
+        }
+      }
+
+      // Fallback: Try API lookup
       const product = await productsAPI.getProductByBarcode(data);
 
       addItem({
@@ -60,7 +82,10 @@ export default function ScanScreen() {
       Alert.alert('✓ Added to Cart', `${product.name} - ₹${product.price}`);
     } catch (err: any) {
       if (err.message === 'Product not found') {
-        Alert.alert('Product Not Found', 'This product is not in our database.');
+        Alert.alert(
+          'Product Not Found',
+          'This product is not available in ' + (currentStore?.name || 'your store') + '.'
+        );
       } else {
         Alert.alert('Error', 'Failed to fetch product. Please try again.');
       }
@@ -93,6 +118,9 @@ export default function ScanScreen() {
           )}
         </Pressable>
       </View>
+
+      {/* Location Header */}
+      <LocationHeader />
 
       {/* Scan Area */}
       <View style={styles.scanArea}>

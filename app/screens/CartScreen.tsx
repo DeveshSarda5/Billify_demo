@@ -3,6 +3,7 @@ import { Plus, Minus, Trash2, Tag } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
+import LocationHeader from '../components/LocationHeader';
 
 export default function CartScreen() {
   const { items, updateQty, removeItem, total } = useCart();
@@ -36,6 +37,7 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
+      <LocationHeader />
       <FlatList
         data={items}
         keyExtractor={(item) => item.barcode}

@@ -4,11 +4,14 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { User, Mail, Phone, LogOut, ChevronRight } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
+import LocationHeader from '../components/LocationHeader';
+import { useLocation } from '../context/LocationContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
     const { logout, user } = useAuth();
+    const { currentStore } = useLocation();
     const [loading, setLoading] = useState(false);
 
     // Provide default values if user is null
@@ -51,9 +54,11 @@ export default function ProfileScreen({ navigation }: Props) {
     }
 
     return (
-        <ScrollView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
+        <>
+            <ScrollView style={styles.container}>
+                <LocationHeader />
+                {/* Header */}
+                <View style={styles.header}>
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatar}>
                         <User size={40} color="#fff" />
@@ -141,7 +146,8 @@ export default function ProfileScreen({ navigation }: Props) {
             </Pressable>
 
             <View style={styles.footer} />
-        </ScrollView>
+            </ScrollView>
+        </>
     );
 }
 
@@ -244,6 +250,11 @@ const styles = StyleSheet.create({
     settingText: {
         fontSize: 16,
         color: '#1f2937',
+    },
+    settingSubtext: {
+        fontSize: 12,
+        color: '#6b7280',
+        marginTop: 4,
     },
     logoutBtn: {
         flexDirection: 'row',

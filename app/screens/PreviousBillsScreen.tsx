@@ -4,6 +4,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { useEffect, useState } from 'react';
 import { billsAPI } from '../services/api';
 import { Trash2 } from 'lucide-react-native';
+import LocationHeader from '../components/LocationHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PreviousBills'>;
 
@@ -12,6 +13,13 @@ interface Bill {
   totalAmount: number;
   createdAt: string;
   paymentStatus: string;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+  subtotal?: number;
+  tax?: number;
 }
 
 export default function PreviousBillsScreen({ navigation }: Props) {
@@ -83,6 +91,7 @@ export default function PreviousBillsScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <LocationHeader />
       <Text style={styles.title}>Previous Bills</Text>
 
       {bills.length === 0 ? (
@@ -95,23 +104,53 @@ export default function PreviousBillsScreen({ navigation }: Props) {
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
             <View style={styles.billCard}>
-              <Pressable
-                style={styles.billInfo}
-                onPress={() =>
-                  navigation.navigate('BillDetails', { billId: item._id })
-                }
-              >
+              {/* Header with Bill ID and Date */}
+              <View style={styles.billHeader}>
                 <View>
                   <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
                   <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+                  <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
+                    {item.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
+                  </Text>
                 </View>
+                <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
+                  <Trash2 size={20} color="#ef4444" />
+                </Pressable>
+              </View>
 
-                <Text style={styles.amount}>₹{item.totalAmount}</Text>
-              </Pressable>
+              {/* Items Breakdown */}
+              <View style={styles.itemsContainer}>
+                <View style={styles.itemHeader}>
+                  <Text style={[styles.itemText, styles.itemName]}>Item</Text>
+                  <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
+                  <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
+                </View>
+                {item.items && item.items.map((lineItem, idx) => (
+                  <View key={idx} style={styles.itemRow}>
+                    <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{lineItem.name}</Text>
+                    <Text style={[styles.itemValue, styles.itemQty]}>{lineItem.quantity}</Text>
+                    <Text style={[styles.itemValue, styles.itemPrice]}>₹{(lineItem.price * lineItem.quantity).toFixed(2)}</Text>
+                  </View>
+                ))}
+              </View>
 
-              <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
-                <Trash2 size={20} color="#ef4444" />
-              </Pressable>
+              {/* Totals */}
+              <View style={styles.totalsContainer}>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Subtotal:</Text>
+                  <Text style={styles.totalValue}>₹{(item.subtotal || item.totalAmount).toFixed(2)}</Text>
+                </View>
+                {item.tax !== undefined && item.tax > 0 && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Tax (GST):</Text>
+                    <Text style={styles.totalValue}>₹{item.tax.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={[styles.totalRow, styles.grandTotalRow]}>
+                  <Text style={styles.grandTotalLabel}>Total Amount:</Text>
+                  <Text style={styles.grandTotalValue}>₹{item.totalAmount.toFixed(2)}</Text>
+                </View>
+              </View>
             </View>
           )}
         />
@@ -135,31 +174,110 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 14,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 16, // Space for trash icon
+    borderLeftWidth: 4,
+    borderLeftColor: '#4caf50',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  billInfo: {
-    flex: 1,
+  billHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  billId: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  date: {
+    color: '#6b7280',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  status: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
   deleteBtn: {
     padding: 8,
   },
-  billId: {
-    fontWeight: '600',
-    fontSize: 16,
+  itemsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  date: {
+  itemHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  itemText: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#6b7280',
-    marginTop: 4,
   },
-  amount: {
-    fontWeight: '600',
-    fontSize: 16,
+  itemValue: {
+    fontSize: 13,
+    color: '#1f2937',
+  },
+  itemName: {
+    flex: 1,
+  },
+  itemQty: {
+    width: 50,
+    textAlign: 'center',
+  },
+  itemPrice: {
+    width: 80,
+    textAlign: 'right',
+  },
+  totalsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  grandTotalRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    marginBottom: 0,
+  },
+  totalLabel: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  totalValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1f2937',
+  },
+  grandTotalLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  grandTotalValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4caf50',
   },
   centered: {
     flex: 1,

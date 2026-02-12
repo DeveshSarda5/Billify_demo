@@ -6,6 +6,9 @@ import { useCart } from '../context/CartContext';
 import { billsAPI, paymentAPI } from '../services/api';
 import RazorpayCheckout from 'react-native-razorpay';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
+import LocationHeader from '../components/LocationHeader';
+import RatingModal from '../components/RatingModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -18,10 +21,12 @@ export default function PaymentScreen({ route, navigation }: Props) {
   const total = route.params?.total ?? 0;
   const { items, clearCart } = useCart();
   const { user } = useAuth();
+  const { currentStore } = useLocation();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   const processBillCreation = async (paymentId?: string) => {
     try {
@@ -36,7 +41,13 @@ export default function PaymentScreen({ route, navigation }: Props) {
 
       clearCart();
       Alert.alert('Success', 'Bill generated successfully!');
-      navigation.navigate('ExitPass');
+      
+      // Show rating modal if store is detected
+      if (currentStore?.id) {
+        setShowRatingModal(true);
+      } else {
+        navigation.navigate('ExitPass');
+      }
     } catch (err: any) {
       Alert.alert('Error', 'Payment successful but bill generation failed. Contact support.');
     }
@@ -92,6 +103,7 @@ export default function PaymentScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <LocationHeader />
       <Text style={styles.title}>Payment</Text>
 
       {/* Amount Card */}
@@ -156,6 +168,19 @@ export default function PaymentScreen({ route, navigation }: Props) {
           </View>
         </View>
       </Modal>
+
+      {/* Rating Modal */}
+      {currentStore && (
+        <RatingModal
+          visible={showRatingModal}
+          storeId={currentStore.id}
+          storeName={currentStore.name}
+          onClose={() => {
+            setShowRatingModal(false);
+            navigation.navigate('ExitPass');
+          }}
+        />
+      )}
     </View>
   );
 }

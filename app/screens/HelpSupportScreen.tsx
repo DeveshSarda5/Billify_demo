@@ -60,7 +60,10 @@ export default function HelpSupportScreen({ navigation }: Props) {
     };
 
     const renderTicket = ({ item }: { item: Ticket }) => (
-        <View style={styles.card}>
+        <Pressable
+            style={styles.card}
+            onPress={() => navigation.navigate('TicketDetails', { ticketId: item._id })}
+        >
             <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{item.subject}</Text>
                 <View style={[styles.statusBadge,
@@ -73,7 +76,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
             </View>
             <Text style={styles.cardBody} numberOfLines={2}>{item.message}</Text>
             <Text style={styles.cardDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-        </View>
+        </Pressable>
     );
 
     return (

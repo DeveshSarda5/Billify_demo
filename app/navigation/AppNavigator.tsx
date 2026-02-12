@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ScanScreen from '../screens/ScanScreen';
 import CartScreen from '../screens/CartScreen';
@@ -17,13 +18,15 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
+import TicketDetailsScreen from '../screens/TicketDetailsScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import ManageUPIScreen from '../screens/UpiManagementScreen';
 import ManageCardsScreen from '../screens/CardsScreen';
 
 export type RootStackParamList = {
   Login: undefined;
-  Signup: undefined;
+  Signup: { phoneVerified?: boolean; phoneNumber?: string };
+  OTPVerification: { phoneNumber: string };
   Dashboard: undefined;
   Scan: undefined;
   Cart: { barcode: string };
@@ -38,6 +41,7 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   NotificationSettings: undefined;
   HelpSupport: undefined;
+  TicketDetails: { ticketId: string };
   PrivacyPolicy: undefined;
   ManageUPI: undefined;
   ManageCards: undefined;
@@ -56,6 +60,7 @@ export default function AppNavigator() {
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         </>
       ) : (
         <>
@@ -73,6 +78,7 @@ export default function AppNavigator() {
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="TicketDetails" component={TicketDetailsScreen} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
           <Stack.Screen name="ManageUPI" component={ManageUPIScreen} />
           <Stack.Screen name="ManageCards" component={ManageCardsScreen} />

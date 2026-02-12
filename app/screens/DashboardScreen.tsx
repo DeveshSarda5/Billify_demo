@@ -11,6 +11,8 @@ import {
     LogOut,
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import LocationHeader from '../components/LocationHeader';
+import RefreshLocationButton from '../components/RefreshLocationButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -30,10 +32,16 @@ export default function DashboardScreen({ navigation }: Props) {
                     <Text style={styles.subtitle}>Welcome back, {user?.name || 'Guest'}!</Text>
                 </View>
 
-                <Pressable style={styles.logoutBtn} onPress={logout}>
-                    <LogOut size={20} color="#555" />
-                </Pressable>
+                <View style={styles.headerActions}>
+                    <RefreshLocationButton />
+                    <Pressable style={styles.logoutBtn} onPress={logout}>
+                        <LogOut size={20} color="#555" />
+                    </Pressable>
+                </View>
             </View>
+
+            {/* Location Header */}
+            <LocationHeader />
 
             {/* Scan Card */}
             <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Scan')}>
@@ -139,6 +147,10 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    headerActions: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
     title: { fontSize: 28, fontWeight: 'bold', color: '#1f2937' },
