@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authAPI } from '../services/api';
+import { createContext, useContext, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authAPI, AuthResponse } from "../services/api";
 
 type User = {
   name: string;
@@ -14,7 +14,12 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (data: { name: string; email: string; phone: string; password: string }) => Promise<void>;
+  signup: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
 };
@@ -26,66 +31,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔁 Restore auth state on app load
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
-        const userData = await AsyncStorage.getItem('user');
+        const token = await AsyncStorage.getItem("token");
+        const userData = await AsyncStorage.getItem("user");
 
         if (token && userData) {
-          setIsLoggedIn(true);
           setUser(JSON.parse(userData));
+          setIsLoggedIn(true);
         }
-      } catch (e) {
-        console.error('Failed to load auth state', e);
+      } catch (error) {
+        console.error("Auth restore failed:", error);
       } finally {
         setLoading(false);
       }
     };
+
     initAuth();
   }, []);
 
+  // 🔐 LOGIN
   const login = async (email: string, password: string) => {
-    const response = await authAPI.login({ email, password });
-    const userData = {
-      name: response.name,
-      email: response.email,
-      phone: response.phone,
-      location: response.location,
-    };
+    try {
+      const response = (await authAPI.login({
+        email,
+        password,
+      })) as AuthResponse;
 
-    await AsyncStorage.setItem('token', response.token);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
+      const userData: User = {
+        name: response.user.name,
+        email: response.user.email,
+        phone: response.user.phone,
+        location: response.user.location,
+      };
 
-    setUser(userData);
-    setIsLoggedIn(true);
+      await AsyncStorage.setItem("token", response.token);
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
+
+      setUser(userData);
+      setIsLoggedIn(true);
+    } catch (error) {
+      throw error;
+    }
   };
 
-  const signup = async (data: { name: string; email: string; phone: string; password: string }) => {
-    const response = await authAPI.signup(data);
-    const userData = {
-      name: response.name,
-      email: response.email,
-      phone: response.phone,
-      location: response.location,
-    };
+  // 📝 SIGNUP
+  const signup = async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => {
+    try {
+      const response = (await authAPI.signup(data)) as AuthResponse;
 
-    await AsyncStorage.setItem('token', response.token);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
+      const userData: User = {
+        name: response.user.name,
+        email: response.user.email,
+        phone: response.user.phone,
+        location: response.user.location,
+      };
 
-    setUser(userData);
-    setIsLoggedIn(true);
+      // Auto-login after signup
+      await AsyncStorage.setItem("token", response.token);
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
+
+      setUser(userData);
+      setIsLoggedIn(true);
+    } catch (error) {
+      throw error;
+    }
   };
 
+  // 🔓 LOGOUT
   const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("user");
+
     setUser(null);
     setIsLoggedIn(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, loading, login, signup, logout, setUser }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+        setUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

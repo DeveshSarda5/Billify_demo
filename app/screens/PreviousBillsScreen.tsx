@@ -103,55 +103,67 @@ export default function PreviousBillsScreen({ navigation }: Props) {
           data={bills}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <View style={styles.billCard}>
-              {/* Header with Bill ID and Date */}
-              <View style={styles.billHeader}>
-                <View>
-                  <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
-                  <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
-                  <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
-                    {item.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
-                  </Text>
-                </View>
-                <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
-                  <Trash2 size={20} color="#ef4444" />
-                </Pressable>
-              </View>
-
-              {/* Items Breakdown */}
-              <View style={styles.itemsContainer}>
-                <View style={styles.itemHeader}>
-                  <Text style={[styles.itemText, styles.itemName]}>Item</Text>
-                  <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
-                  <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
-                </View>
-                {item.items && item.items.map((lineItem, idx) => (
-                  <View key={idx} style={styles.itemRow}>
-                    <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{lineItem.name}</Text>
-                    <Text style={[styles.itemValue, styles.itemQty]}>{lineItem.quantity}</Text>
-                    <Text style={[styles.itemValue, styles.itemPrice]}>₹{(lineItem.price * lineItem.quantity).toFixed(2)}</Text>
+            <Pressable onPress={() => navigation.navigate('BillDetails', { bill: item })}>
+              <View style={styles.billCard}>
+                {/* Header with Bill ID and Date */}
+                <View style={styles.billHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
+                    <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+                    <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
+                      {item.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
+                    </Text>
                   </View>
-                ))}
-              </View>
-
-              {/* Totals */}
-              <View style={styles.totalsContainer}>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Subtotal:</Text>
-                  <Text style={styles.totalValue}>₹{(item.subtotal || item.totalAmount).toFixed(2)}</Text>
+                  <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
+                    <Trash2 size={20} color="#ef4444" />
+                  </Pressable>
                 </View>
-                {item.tax !== undefined && item.tax > 0 && (
+
+                {/* Items Breakdown */}
+                <View style={styles.itemsContainer}>
+                  <View style={styles.itemHeader}>
+                    <Text style={[styles.itemText, styles.itemName]}>Item</Text>
+                    <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
+                    <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
+                  </View>
+                  {item.items && item.items.map((lineItem, idx) => (
+                    <View key={idx} style={styles.itemRow}>
+                      <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{lineItem.name}</Text>
+                      <Text style={[styles.itemValue, styles.itemQty]}>{lineItem.quantity}</Text>
+                      <Text style={[styles.itemValue, styles.itemPrice]}>₹{(lineItem.price * lineItem.quantity).toFixed(2)}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Totals */}
+                <View style={styles.totalsContainer}>
                   <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Tax (GST):</Text>
-                    <Text style={styles.totalValue}>₹{item.tax.toFixed(2)}</Text>
+                    <Text style={styles.totalLabel}>Subtotal:</Text>
+                    <Text style={styles.totalValue}>₹{(item.subtotal || item.totalAmount).toFixed(2)}</Text>
                   </View>
-                )}
-                <View style={[styles.totalRow, styles.grandTotalRow]}>
-                  <Text style={styles.grandTotalLabel}>Total Amount:</Text>
-                  <Text style={styles.grandTotalValue}>₹{item.totalAmount.toFixed(2)}</Text>
+                  {item.tax !== undefined && item.tax > 0 && (
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Tax (GST):</Text>
+                      <Text style={styles.totalValue}>₹{item.tax.toFixed(2)}</Text>
+                    </View>
+                  )}
+                  <View style={[styles.totalRow, styles.grandTotalRow]}>
+                    <Text style={styles.grandTotalLabel}>Total Amount:</Text>
+                    <Text style={styles.grandTotalValue}>₹{item.totalAmount.toFixed(2)}</Text>
+                  </View>
                 </View>
+
+                {/* Exit Pass Button (if paid) */}
+                {item.paymentStatus === 'paid' && item.exitPass && (
+                  <Pressable
+                    style={styles.exitPassBtn}
+                    onPress={() => navigation.navigate('BillDetails', { bill: item })}
+                  >
+                    <Text style={styles.exitPassBtnText}>📋 View Exit Pass</Text>
+                  </Pressable>
+                )}
               </View>
-            </View>
+            </Pressable>
           )}
         />
       )}
@@ -278,6 +290,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#4caf50',
+  },
+  exitPassBtn: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  exitPassBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
   },
   centered: {
     flex: 1,

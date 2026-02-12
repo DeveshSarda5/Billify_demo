@@ -7,8 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { ShoppingCart, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { ShoppingCart } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }: any) {
@@ -16,7 +17,6 @@ export default function LoginScreen({ navigation }: any) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,21 +25,13 @@ export default function LoginScreen({ navigation }: any) {
       setError('Please fill in all fields');
       return;
     }
-    if (password.length < 4) {
-      setError('Password must be at least 4 characters');
-      return;
-    }
 
     setError('');
     setLoading(true);
 
     try {
       await login(email, password);
-
-      Alert.alert(
-        'Login Successful',
-        'Welcome back to Billify 👋'
-      );
+      Alert.alert('Login Successful', 'Welcome back to Billify 👋');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -49,22 +41,20 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Branding */}
-      <View style={styles.header}>
-        <View style={styles.logo}>
-          <ShoppingCart size={36} color="#fff" />
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+        {/* Branding */}
+        <View style={styles.header}>
+          <View style={styles.logo}>
+            <ShoppingCart size={32} color="#fff" />
+          </View>
+          <Text style={styles.appName}>Billify</Text>
+          <Text style={styles.subtitle}>Welcome Back</Text>
         </View>
-        <Text style={styles.appName}>Billify</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
-      </View>
 
-      {/* Form */}
-      <View style={styles.form}>
-        {/* Email */}
-        <View style={styles.inputWrapper}>
-          <Mail size={20} color="#9ca3af" />
+        {/* Form */}
+        <View style={styles.form}>
           <TextInput
-            placeholder="Email or Phone"
+            placeholder="Email"
             style={styles.input}
             autoCapitalize="none"
             value={email}
@@ -73,57 +63,44 @@ export default function LoginScreen({ navigation }: any) {
               setError('');
             }}
           />
-        </View>
 
-        {/* Password */}
-        <View style={styles.inputWrapper}>
-          <Lock size={20} color="#9ca3af" />
           <TextInput
             placeholder="Password"
             style={styles.input}
-            secureTextEntry={!showPassword}
+            secureTextEntry
             value={password}
             onChangeText={(t) => {
               setPassword(t);
               setError('');
             }}
           />
-          <Pressable onPress={() => setShowPassword(!showPassword)}>
-            {showPassword ? (
-              <EyeOff size={20} color="#6b7280" />
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Pressable
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Eye size={20} color="#6b7280" />
+              <Text style={styles.buttonText}>Login</Text>
             )}
           </Pressable>
         </View>
 
-        {/* Error */}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {/* Login Button */}
-        <Pressable
-          style={[styles.button, loading && { opacity: 0.7 }]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </Pressable>
-      </View>
-
-      {/* Switch */}
-      <Text style={styles.switchText}>
-        Don't have an account?{' '}
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate('Signup')}
-        >
-          Sign Up
+        {/* Switch */}
+        <Text style={styles.switchText}>
+          Don't have an account?{' '}
+          <Text
+            style={styles.link}
+            onPress={() => navigation.navigate('Signup')}
+          >
+            Sign Up
+          </Text>
         </Text>
-      </Text>
+      </ScrollView>
     </View>
   );
 }
@@ -131,57 +108,75 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
     backgroundColor: '#f9fafb',
-    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
-  header: { alignItems: 'center', marginBottom: 30 },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
   logo: {
     backgroundColor: '#4caf50',
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 72,
+    height: 72,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  appName: { fontSize: 32, fontWeight: 'bold' },
-  subtitle: { color: '#6b7280' },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
-  form: { gap: 14 },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+  appName: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1f2937',
   },
-  input: { flex: 1 },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 8,
+  },
+  form: {
+    marginBottom: 24,
+  },
+  input: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    fontSize: 14,
+    color: '#1f2937',
+  },
   error: {
     backgroundColor: '#fee2e2',
     color: '#b91c1c',
-    padding: 10,
-    borderRadius: 12,
-    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    fontSize: 13,
   },
   button: {
     backgroundColor: '#4caf50',
-    paddingVertical: 16,
-    borderRadius: 16,
-    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
-    textAlign: 'center',
     fontSize: 16,
   },
   switchText: {
     textAlign: 'center',
-    marginTop: 20,
+    fontSize: 14,
     color: '#6b7280',
   },
-  link: { color: '#4caf50', fontWeight: '600' },
+  link: {
+    color: '#4caf50',
+    fontWeight: '600',
+  },
 });

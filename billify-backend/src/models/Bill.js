@@ -38,6 +38,10 @@ const BillSchema = new mongoose.Schema(
             enum: ['pending', 'paid'],
             default: 'pending',
         },
+        exitPass: {
+            type: String,
+            default: null,
+        },
     },
     { timestamps: true }
 );

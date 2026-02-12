@@ -30,11 +30,21 @@ interface TicketDetail {
   respondedAt?: string;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  'billing-issue': 'Billing Issue',
+  'payment-failure': 'Payment Failure',
+  'refund-request': 'Refund Request',
+  'technical-problem': 'Technical Problem',
+  'account-issue': 'Account Issue',
+  'other': 'Other',
+};
+
 export default function TicketDetailsScreen({ route, navigation }: Props) {
   const { ticketId } = route.params;
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     loadTicketDetails();
@@ -44,21 +54,42 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
     try {
       setLoading(true);
       setError('');
-      // Get ticket from myTickets and find by ID
-      const tickets = await supportAPI.getMyTickets();
-      const ticket = tickets.find((t: any) => t._id === ticketId);
-      
-      if (!ticket) {
-        setError('Ticket not found');
-        return;
-      }
-      
-      setTicket(ticket);
+      const ticketData = await supportAPI.getTicket(ticketId);
+      setTicket(ticketData);
     } catch (err: any) {
       setError(err.message || 'Failed to load ticket details');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseTicket = async () => {
+    if (!ticket) return;
+
+    Alert.alert(
+      'Close Ticket',
+      'Are you sure you want to close this ticket?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Close',
+          style: 'destructive',
+          onPress: async () => {
+            setClosing(true);
+            try {
+              const updatedTicket = await supportAPI.closeTicket(ticketId);
+              setTicket(updatedTicket);
+              Alert.alert('Success', 'Ticket closed successfully');
+              navigation.goBack();
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to close ticket');
+            } finally {
+              setClosing(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getStatusColor = (status: string | undefined) => {
@@ -78,6 +109,11 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
   const getStatusLabel = (status: string | undefined) => {
     if (!status) return 'Unknown';
     return status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ');
+  };
+
+  const getCategoryLabel = (category: string | undefined) => {
+    if (!category) return 'Other';
+    return CATEGORY_LABELS[category] || 'Other';
   };
 
   const formatDate = (dateString: string) => {
@@ -166,9 +202,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Category</Text>
-            <Text style={styles.infoValue}>
-              {ticket.category ? ticket.category.charAt(0).toUpperCase() + ticket.category.slice(1) : 'General'}
-            </Text>
+            <Text style={styles.infoValue}>{getCategoryLabel(ticket.category)}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -185,7 +219,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Title</Text>
         <View style={styles.titleCard}>
-          <Text style={styles.titleText}>{ticket.title}</Text>
+          <Text style={styles.titleText}>{ticket.title || 'N/A'}</Text>
         </View>
       </View>
 
@@ -193,7 +227,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Description</Text>
         <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionText}>{ticket.description}</Text>
+          <Text style={styles.descriptionText}>{ticket.description || 'N/A'}</Text>
         </View>
       </View>
 
@@ -215,26 +249,15 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
       {/* Action Button */}
       {ticket.status === 'open' && (
         <Pressable
-          style={styles.closeBtn}
-          onPress={() => {
-            Alert.alert(
-              'Close Ticket',
-              'Are you sure you want to close this ticket?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Close',
-                  style: 'destructive',
-                  onPress: () => {
-                    Alert.alert('Success', 'Ticket closed successfully');
-                    navigation.goBack();
-                  },
-                },
-              ]
-            );
-          }}
+          style={[styles.closeBtn, closing && { opacity: 0.7 }]}
+          onPress={handleCloseTicket}
+          disabled={closing}
         >
-          <Text style={styles.closeBtnText}>Close Ticket</Text>
+          {closing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.closeBtnText}>Close Ticket</Text>
+          )}
         </Pressable>
       )}
 
@@ -252,14 +275,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
@@ -270,10 +293,10 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   statusCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
     backgroundColor: '#fff',
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 12,
     borderRadius: 12,
     borderLeftWidth: 4,
   },
@@ -290,22 +313,22 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 20,
   },
   statusText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
   },
   section: {
     paddingHorizontal: 16,
-    marginTop: 20,
+    paddingVertical: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    color: '#1f2937',
+    marginBottom: 12,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -314,23 +337,23 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   infoLabel: {
     fontSize: 13,
     color: '#6b7280',
+    fontWeight: '500',
   },
   infoValue: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
     color: '#1f2937',
+    fontWeight: '600',
+    marginLeft: 'auto',
   },
   divider: {
     height: 1,
-    backgroundColor: '#f3f4f6',
-    marginVertical: 8,
+    backgroundColor: '#e5e7eb',
   },
   titleCard: {
     backgroundColor: '#fff',
@@ -354,56 +377,53 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   responseCard: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     padding: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
+    borderLeftColor: '#10b981',
   },
   cardBg: {
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#f0fdf4',
   },
   responseText: {
     fontSize: 14,
-    color: '#15803d',
+    color: '#1f2937',
     lineHeight: 22,
-    marginBottom: 8,
   },
   respondedDate: {
     fontSize: 12,
     color: '#6b7280',
+    marginTop: 12,
     fontStyle: 'italic',
   },
   closeBtn: {
+    backgroundColor: '#ef4444',
     marginHorizontal: 16,
-    marginVertical: 20,
-    paddingVertical: 12,
-    backgroundColor: '#ff9800',
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    marginVertical: 16,
   },
   closeBtnText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    marginBottom: 16,
   },
   retryBtn: {
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
     backgroundColor: '#4caf50',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   retryText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#fff',
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    marginTop: 12,
-    textAlign: 'center',
+    fontWeight: '600',
   },
   footer: {
     height: 20,

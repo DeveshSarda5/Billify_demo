@@ -1,350 +1,358 @@
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, ActivityIndicator, FlatList, ScrollView } from 'react-native';
-import { useState, useEffect } from 'react';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { supportAPI } from '../services/api';
-import { MessageSquare } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  Modal,
+} from "react-native";
+import { useState, useEffect } from "react";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import { supportAPI } from "../services/api";
+import { MessageSquare, ChevronDown } from "lucide-react-native";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'HelpSupport'>;
+type Props = NativeStackScreenProps<RootStackParamList, "HelpSupport">;
 
 type Ticket = {
-    _id: string;
-    subject: string;
-    message: string;
-    status: string;
-    createdAt: string;
+  _id: string;
+  title: string;
+  description: string;
+  status: string;
+  category: string;
+  createdAt: string;
 };
 
+const TICKET_CATEGORIES = [
+  { label: "Billing Issue", value: "billing-issue" },
+  { label: "Payment Failure", value: "payment-failure" },
+  { label: "Refund Request", value: "refund-request" },
+  { label: "Technical Problem", value: "technical-problem" },
+  { label: "Account Issue", value: "account-issue" },
+  { label: "Other", value: "other" },
+];
+
 export default function HelpSupportScreen({ navigation }: Props) {
-    const [activeTab, setActiveTab] = useState<'faq' | 'ticket'>('faq');
-    const [tickets, setTickets] = useState<Ticket[]>([]);
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"faq" | "ticket">("faq");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("other");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-    useEffect(() => {
-        loadTickets();
-    }, []);
+  useEffect(() => {
+    loadTickets();
+  }, []);
 
-    const loadTickets = async () => {
-        setLoading(true);
-        try {
-            const data = await supportAPI.getMyTickets();
-            setTickets(data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const loadTickets = async () => {
+    setLoading(true);
+    try {
+      const data = await supportAPI.getMyTickets();
+      setTickets(data as Ticket[]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleSubmit = async () => {
-        if (!subject || !message) {
-            Alert.alert('Error', 'Please fill in all fields');
-            return;
-        }
+  const handleSubmit = async () => {
+    if (!title || !description) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
 
-        setSubmitting(true);
-        try {
-            await supportAPI.createTicket({ subject, message });
-            Alert.alert('Success', 'Ticket submitted successfully');
-            setSubject('');
-            setMessage('');
-            loadTickets(); // Refresh list
-        } catch (error: any) {
-            Alert.alert('Error', error.message);
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    setSubmitting(true);
+    try {
+      await supportAPI.createTicket({ title, description, category });
+      Alert.alert("Success", "Ticket submitted successfully");
+      setTitle("");
+      setDescription("");
+      setCategory("other");
+      loadTickets();
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    const renderTicket = ({ item }: { item: Ticket }) => (
-        <Pressable
-            style={styles.card}
-            onPress={() => navigation.navigate('TicketDetails', { ticketId: item._id })}
-        >
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.subject}</Text>
-                <View style={[styles.statusBadge,
-                { backgroundColor: item.status === 'open' ? '#e0f2fe' : '#dcfce7' }
-                ]}>
-                    <Text style={[styles.statusText,
-                    { color: item.status === 'open' ? '#0ea5e9' : '#22c55e' }
-                    ]}>{item.status.toUpperCase()}</Text>
-                </View>
-            </View>
-            <Text style={styles.cardBody} numberOfLines={2}>{item.message}</Text>
-            <Text style={styles.cardDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-        </Pressable>
-    );
+  const getCategoryLabel = (value: string) => {
+    const cat = TICKET_CATEGORIES.find((c) => c.value === value);
+    return cat?.label || "Other";
+  };
 
-    return (
-        <View style={styles.container}>
-            {/* TABS */}
-            <View style={styles.tabContainer}>
-                <Pressable
-                    style={[styles.tab, activeTab === 'faq' && styles.activeTab]}
-                    onPress={() => setActiveTab('faq')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'faq' && styles.activeTabText]}>FAQs</Text>
-                </Pressable>
-                <Pressable
-                    style={[styles.tab, activeTab === 'ticket' && styles.activeTab]}
-                    onPress={() => setActiveTab('ticket')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'ticket' && styles.activeTabText]}>My Tickets</Text>
-                </Pressable>
-            </View>
-
-            {activeTab === 'faq' ? (
-                <ScrollView style={styles.content}>
-                    <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
-
-                    <View style={styles.faqItem}>
-                        <Text style={styles.question}>How do I reset my password?</Text>
-                        <Text style={styles.answer}>Go to Profile {'>'} Change Password. Enter your current password and choose a new one.</Text>
-                    </View>
-
-                    <View style={styles.faqItem}>
-                        <Text style={styles.question}>How do I get a refund?</Text>
-                        <Text style={styles.answer}>Refunds are processed within 5-7 business days. Please create a support ticket with your Order ID.</Text>
-                    </View>
-
-                    <View style={styles.faqItem}>
-                        <Text style={styles.question}>Where can I view my past bills?</Text>
-                        <Text style={styles.answer}>You can view all your previous transactions in the "Previous Bills" section on the Dashboard.</Text>
-                    </View>
-
-                    <View style={styles.faqContact}>
-                        <Text style={styles.faqContactText}>Still have questions? Switch to the "My Tickets" tab to contact us.</Text>
-                    </View>
-                </ScrollView>
-            ) : (
-                <>
-                    <View style={styles.formSection}>
-                        <Text style={styles.sectionTitle}>Contact Support</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Subject"
-                            value={subject}
-                            onChangeText={setSubject}
-                        />
-                        <TextInput
-                            style={[styles.input, styles.textArea]}
-                            placeholder="Describe your issue..."
-                            value={message}
-                            onChangeText={setMessage}
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
-                        />
-                        <Pressable
-                            style={[styles.submitBtn, submitting && styles.disabled]}
-                            onPress={handleSubmit}
-                            disabled={submitting}
-                        >
-                            {submitting ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.submitText}>Submit Ticket</Text>
-                            )}
-                        </Pressable>
-                    </View>
-
-                    <Text style={styles.historyTitle}>Your Tickets</Text>
-                    {loading ? (
-                        <ActivityIndicator style={{ marginTop: 20 }} color="#4caf50" />
-                    ) : (
-                        <FlatList
-                            data={tickets}
-                            renderItem={renderTicket}
-                            keyExtractor={item => item._id}
-                            contentContainerStyle={styles.listContent}
-                            ListEmptyComponent={
-                                <View style={styles.emptyState}>
-                                    <MessageSquare size={40} color="#9ca3af" />
-                                    <Text style={styles.emptyText}>No tickets yet</Text>
-                                </View>
-                            }
-                        />
-                    )}
-                </>
-            )}
+  const renderTicket = ({ item }: { item: Ticket }) => (
+    <Pressable
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("TicketDetails", { ticketId: item._id })
+      }
+    >
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.categoryBadgeText}>
+            {getCategoryLabel(item.category)}
+          </Text>
         </View>
-    );
+
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                item.status === "open"
+                  ? "#e0f2fe"
+                  : item.status === "closed"
+                  ? "#dcfce7"
+                  : "#fef3c7",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              {
+                color:
+                  item.status === "open"
+                    ? "#0ea5e9"
+                    : item.status === "closed"
+                    ? "#22c55e"
+                    : "#b45309",
+              },
+            ]}
+          >
+            {item.status.toUpperCase()}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.cardBody} numberOfLines={2}>
+        {item.description}
+      </Text>
+      <Text style={styles.cardDate}>
+        {new Date(item.createdAt).toLocaleDateString()}
+      </Text>
+    </Pressable>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <Pressable
+          style={[styles.tab, activeTab === "faq" && styles.activeTab]}
+          onPress={() => setActiveTab("faq")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "faq" && styles.activeTabText,
+            ]}
+          >
+            FAQs
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.tab, activeTab === "ticket" && styles.activeTab]}
+          onPress={() => setActiveTab("ticket")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "ticket" && styles.activeTabText,
+            ]}
+          >
+            My Tickets
+          </Text>
+        </Pressable>
+      </View>
+
+      {activeTab === "faq" ? (
+        <ScrollView style={styles.content}>
+          <Text style={styles.sectionTitle}>
+            Frequently Asked Questions
+          </Text>
+        </ScrollView>
+      ) : (
+        <>
+          <View style={styles.formSection}>
+            <Text style={styles.sectionTitle}>
+              Create Support Ticket
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Title"
+              value={title}
+              onChangeText={setTitle}
+            />
+
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Describe your issue..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              textAlignVertical="top"
+            />
+
+            <Pressable
+              style={styles.categoryInput}
+              onPress={() => setShowCategoryModal(true)}
+            >
+              <Text style={styles.categoryLabel}>
+                {getCategoryLabel(category)}
+              </Text>
+              <ChevronDown size={20} color="#9ca3af" />
+            </Pressable>
+
+            <Pressable
+              style={[styles.submitBtn, submitting && styles.disabled]}
+              onPress={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitText}>Submit Ticket</Text>
+              )}
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator style={{ marginTop: 20 }} color="#4caf50" />
+          ) : (
+            <FlatList
+              data={tickets}
+              renderItem={renderTicket}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={styles.listContent}
+            />
+          )}
+        </>
+      )}
+
+      {/* Category Modal */}
+      <Modal visible={showCategoryModal} transparent animationType="fade">
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowCategoryModal(false)}
+        >
+          <View style={styles.categoryModal}>
+            <Text style={styles.modalTitle}>Select Category</Text>
+            {TICKET_CATEGORIES.map((cat) => (
+              <Pressable
+                key={cat.value}
+                style={[
+                  styles.categoryOption,
+                  category === cat.value && styles.selectedCategory,
+                ]}
+                onPress={() => {
+                  setCategory(cat.value);
+                  setShowCategoryModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.categoryOptionText,
+                    category === cat.value &&
+                      styles.selectedCategoryText,
+                  ]}
+                >
+                  {cat.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    formSection: {
-        padding: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-        color: '#1f2937',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 12,
-        fontSize: 16,
-        backgroundColor: '#f9fafb',
-    },
-    textArea: {
-        minHeight: 100,
-    },
-    submitBtn: {
-        backgroundColor: '#4caf50',
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-    },
-    disabled: {
-        opacity: 0.7,
-    },
-    submitText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    historyTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        margin: 20,
-        marginBottom: 10,
-        color: '#1f2937',
-    },
-    listContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    card: {
-        backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    cardTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        flex: 1,
-        marginRight: 8,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    statusText: {
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    cardBody: {
-        fontSize: 14,
-        color: '#4b5563',
-        marginBottom: 8,
-    },
-    cardDate: {
-        fontSize: 12,
-        color: '#9ca3af',
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 40,
-    },
-    emptyText: {
-        marginTop: 12,
-        color: '#9ca3af',
-        fontSize: 16,
-    },
-
-    /* Tabs */
-    tabContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
-    },
-    activeTab: {
-        borderBottomColor: '#4caf50',
-    },
-    tabText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#6b7280',
-    },
-    activeTabText: {
-        color: '#4caf50',
-    },
-
-    /* FAQ */
-    content: {
-        flex: 1,
-        padding: 20,
-    },
-    faqItem: {
-        backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 1,
-    },
-    question: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1f2937',
-        marginBottom: 6,
-    },
-    answer: {
-        fontSize: 14,
-        color: '#4b5563',
-        lineHeight: 20,
-    },
-    faqContact: {
-        marginTop: 20,
-        marginBottom: 40,
-        padding: 16,
-        backgroundColor: '#e0f2fe',
-        borderRadius: 12,
-    },
-    faqContactText: {
-        color: '#0284c7',
-        fontSize: 14,
-        textAlign: 'center',
-        fontWeight: '500',
-    },
+  container: { flex: 1, backgroundColor: "#f9fafb" },
+  tabContainer: { flexDirection: "row", backgroundColor: "#fff" },
+  tab: { flex: 1, padding: 16, alignItems: "center" },
+  activeTab: { borderBottomWidth: 2, borderBottomColor: "#4caf50" },
+  tabText: { color: "#6b7280", fontWeight: "500" },
+  activeTabText: { color: "#4caf50", fontWeight: "600" },
+  content: { padding: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
+  formSection: { padding: 20, backgroundColor: "#fff" },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  textArea: { minHeight: 100 },
+  categoryInput: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  categoryLabel: { fontSize: 16 },
+  submitBtn: {
+    backgroundColor: "#4caf50",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  submitText: { color: "#fff", fontWeight: "600" },
+  disabled: { opacity: 0.7 },
+  listContent: { padding: 20 },
+  card: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  cardTitle: { fontSize: 16, fontWeight: "600" },
+  categoryBadgeText: { fontSize: 12, color: "#6b7280" },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  statusText: { fontSize: 10, fontWeight: "700" },
+  cardBody: { fontSize: 14, marginBottom: 8 },
+  cardDate: { fontSize: 12, color: "#9ca3af" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  categoryModal: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
+  categoryOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: "#f9fafb",
+  },
+  selectedCategory: { backgroundColor: "#e0f2fe" },
+  categoryOptionText: { fontSize: 15 },
+  selectedCategoryText: { color: "#0ea5e9", fontWeight: "600" },
 });

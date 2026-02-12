@@ -7,18 +7,31 @@ const SupportTicketSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
-        subject: {
+        title: {
             type: String,
             required: true,
         },
-        message: {
+        description: {
             type: String,
             required: true,
+        },
+        category: {
+            type: String,
+            enum: ['billing-issue', 'payment-failure', 'refund-request', 'technical-problem', 'account-issue', 'other'],
+            default: 'other',
         },
         status: {
             type: String,
-            enum: ['open', 'in_progress', 'resolved', 'closed'],
+            enum: ['open', 'in-progress', 'closed'],
             default: 'open',
+        },
+        response: {
+            type: String,
+            default: null,
+        },
+        respondedAt: {
+            type: Date,
+            default: null,
         },
     },
     { timestamps: true }

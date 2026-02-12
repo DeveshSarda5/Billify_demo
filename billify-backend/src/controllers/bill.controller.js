@@ -17,6 +17,9 @@ exports.createBill = async (req, res) => {
         const tax = subtotal * 0.05;
         const totalAmount = subtotal + tax;
 
+        // Generate unique exit pass ID
+        const exitPass = Math.floor(100000 + Math.random() * 900000).toString();
+
         const bill = new Bill({
             userId: req.user._id, // ✅ Correctly access _id
             items,
@@ -24,6 +27,7 @@ exports.createBill = async (req, res) => {
             tax,
             totalAmount,
             paymentStatus: 'paid', // 🔥 set paid for now
+            exitPass,
         });
 
         const savedBill = await bill.save();

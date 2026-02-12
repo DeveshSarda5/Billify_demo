@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
-import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ScanScreen from '../screens/ScanScreen';
 import CartScreen from '../screens/CartScreen';
@@ -25,8 +24,7 @@ import ManageCardsScreen from '../screens/CardsScreen';
 
 export type RootStackParamList = {
   Login: undefined;
-  Signup: { phoneVerified?: boolean; phoneNumber?: string };
-  OTPVerification: { phoneNumber: string };
+  Signup: undefined;
   Dashboard: undefined;
   Scan: undefined;
   Cart: { barcode: string };
@@ -34,7 +32,7 @@ export type RootStackParamList = {
   PaymentMethods: undefined;
   ExitPass: undefined;
   PreviousBills: undefined;
-  BillDetails: { billId: string };
+  BillDetails: { bill: any };
   Offers: undefined;
   Profile: undefined;
   EditProfile: undefined;
@@ -60,7 +58,6 @@ export default function AppNavigator() {
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         </>
       ) : (
         <>
