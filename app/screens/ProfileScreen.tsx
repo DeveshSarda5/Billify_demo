@@ -1,24 +1,21 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { User, Mail, Phone, LogOut, ChevronRight } from 'lucide-react-native';
+import { User, Mail, Phone, LogOut, ChevronRight, ArrowLeft, Edit2 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect } from 'react';
-import LocationHeader from '../components/LocationHeader';
-import { useLocation } from '../context/LocationContext';
+import { useState } from 'react';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
     const { logout, user } = useAuth();
-    const { currentStore } = useLocation();
     const [loading, setLoading] = useState(false);
 
-    // Provide default values if user is null
-    const userData = user || {
-        name: 'Guest User',
-        email: 'Not Logged In',
-        phone: 'N/A',
+    // Provide default values if user is null or missing properties
+    const userData = {
+        name: user?.name || 'Guest User',
+        email: user?.email || 'No email provided',
+        phone: user?.phone || 'No phone provided',
     };
 
     const handleLogout = () => {
@@ -40,10 +37,6 @@ export default function ProfileScreen({ navigation }: Props) {
         );
     };
 
-    const comingSoon = (feature: string) => {
-        Alert.alert('Coming Soon', `${feature} will be available soon!`);
-    };
-
     if (loading) {
         return (
             <View style={[styles.container, styles.centered]}>
@@ -54,11 +47,21 @@ export default function ProfileScreen({ navigation }: Props) {
     }
 
     return (
-        <>
-            <ScrollView style={styles.container}>
-                <LocationHeader />
-                {/* Header */}
-                <View style={styles.header}>
+        <ScrollView style={styles.container}>
+            {/* Unified Header */}
+            <View style={styles.header}>
+                {/* Navigation Row */}
+                <View style={styles.headerNav}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <ArrowLeft size={24} color="#fff" />
+                    </Pressable>
+                    <Text style={styles.headerTitle}>My Profile</Text>
+                    <Pressable onPress={() => navigation.navigate('EditProfile')} style={styles.backBtn}>
+                        <Edit2 size={20} color="#fff" />
+                    </Pressable>
+                </View>
+
+                {/* Avatar & User Info */}
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatar}>
                         <User size={40} color="#fff" />
@@ -146,8 +149,7 @@ export default function ProfileScreen({ navigation }: Props) {
             </Pressable>
 
             <View style={styles.footer} />
-            </ScrollView>
-        </>
+        </ScrollView>
     );
 }
 
@@ -167,9 +169,27 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#4caf50',
-        paddingTop: 40,
+        paddingTop: 50,
         paddingBottom: 30,
         paddingHorizontal: 20,
+    },
+    headerNav: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    headerTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     avatarContainer: {
         alignItems: 'center',

@@ -42,6 +42,14 @@ const BillSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        status: {
+            type: String,
+            enum: ['pending', 'paid', 'verified'],
+            default: 'paid',
+        },
+        verifiedAt: Date,
+        verifiedStoreName: String,
+        verifiedDistance: Number,
     },
     { timestamps: true }
 );

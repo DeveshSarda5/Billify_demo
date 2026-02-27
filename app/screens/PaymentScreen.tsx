@@ -33,11 +33,12 @@ export default function PaymentScreen({ route, navigation }: Props) {
         quantity: item.qty ?? 1,
       }));
 
-      await billsAPI.createBill({ items: billItems });
+      const response = await billsAPI.createBill({ items: billItems });
+      const billId = response._id || response.id;
 
       clearCart();
       Alert.alert('Success', 'Bill generated successfully!');
-      navigation.navigate('ExitPass');
+      navigation.navigate('ExitPass', { billId });
     } catch (err: any) {
       Alert.alert('Error', 'Payment successful but bill generation failed. Contact support.');
     }

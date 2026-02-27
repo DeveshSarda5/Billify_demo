@@ -1,13 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authAPI, AuthResponse } from "../services/api";
-
-type User = {
-  name: string;
-  email: string;
-  phone: string;
-  location?: string;
-};
+import { authAPI, AuthResponse, User } from "../services/api";
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -22,6 +15,7 @@ type AuthContextType = {
   }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>(null as any);
@@ -36,11 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        const userData = await AsyncStorage.getItem("user");
+        const userDataStr = await AsyncStorage.getItem("user");
 
-        if (token && userData) {
-          setUser(JSON.parse(userData));
-          setIsLoggedIn(true);
+        if (token) {
+          if (userDataStr) {
+            setUser(JSON.parse(userDataStr));
+            setIsLoggedIn(true);
+          }
+          // Always try to get fresh data if token exists
+          await refreshProfile();
         }
       } catch (error) {
         console.error("Auth restore failed:", error);
@@ -52,6 +50,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
+  const refreshProfile = async () => {
+    try {
+      const freshUser = await authAPI.getMe();
+      if (freshUser) {
+        setUser(freshUser);
+        await AsyncStorage.setItem("user", JSON.stringify(freshUser));
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      console.error("Profile refresh failed:", error);
+    }
+  };
+
   // 🔐 LOGIN
   const login = async (email: string, password: string) => {
     try {
@@ -61,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })) as AuthResponse;
 
       const userData: User = {
+        id: response.user.id,
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
@@ -88,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = (await authAPI.signup(data)) as AuthResponse;
 
       const userData: User = {
+        id: response.user.id,
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
@@ -124,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         setUser,
+        refreshProfile,
       }}
     >
       {children}

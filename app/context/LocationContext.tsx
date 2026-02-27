@@ -26,7 +26,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [locationStatus, setLocationStatus] = useState<'detecting' | 'detected' | 'denied' | 'error'>('detecting');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isManuallyOverridden, setIsManuallyOverridden] = useState(false);
-  
+
   const appState = useRef(AppState.currentState);
   const refreshInProgress = useRef(false);
 
@@ -36,7 +36,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const detectLocation = async () => {
     // Prevent multiple simultaneous requests
     if (refreshInProgress.current) return;
-    
+
     // Skip if manually overridden
     if (isManuallyOverridden) return;
 
@@ -57,7 +57,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
       // Get current location
       const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.High,
       });
 
       const { latitude, longitude } = location.coords;

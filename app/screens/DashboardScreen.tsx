@@ -34,7 +34,13 @@ export default function DashboardScreen({ navigation }: Props) {
 
                 <View style={styles.headerActions}>
                     <RefreshLocationButton />
-                    <Pressable style={styles.logoutBtn} onPress={logout}>
+                    <Pressable
+                        style={[styles.headerBtn, { marginRight: 8 }]}
+                        onPress={() => navigation.navigate('Profile')}
+                    >
+                        <User size={20} color="#555" />
+                    </Pressable>
+                    <Pressable style={styles.headerBtn} onPress={logout}>
                         <LogOut size={20} color="#555" />
                     </Pressable>
                 </View>
@@ -155,10 +161,12 @@ const styles = StyleSheet.create({
     },
     title: { fontSize: 28, fontWeight: 'bold', color: '#1f2937' },
     subtitle: { color: '#6b7280', marginTop: 4 },
-    logoutBtn: {
+    headerBtn: {
         backgroundColor: '#fff',
-        padding: 12,
-        borderRadius: 999,
+        padding: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
     },
 
     scanCard: {

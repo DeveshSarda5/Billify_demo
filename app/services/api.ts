@@ -1,7 +1,20 @@
 import { apiGet, apiPost, apiPut, apiDelete, apiLogger } from '../config/apiConfig';
 
 // Type definitions for API responses
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    location?: string;
+};
+
 export type AuthResponse = {
+    token: string;
+    user: User;
+};
+
+export type ProfileResponse = {
     token: string;
     user: {
         id: string;
@@ -10,14 +23,6 @@ export type AuthResponse = {
         phone: string;
         location?: string;
     };
-};
-
-export type ProfileResponse = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    location?: string;
 };
 
 export type PaymentOrderResponse = {
@@ -56,7 +61,11 @@ export type BillResponse = {
     tax: number;
     totalAmount: number;
     paymentStatus: 'pending' | 'paid';
+    status?: 'pending' | 'paid' | 'verified';
     exitPass?: string | null;
+    verifiedAt?: string;
+    verifiedStoreName?: string;
+    verifiedDistance?: number;
     createdAt: string;
 };
 
@@ -107,6 +116,15 @@ export const authAPI = {
         }
     },
 
+    async getMe() {
+        try {
+            return await apiGet<User>('/auth/me');
+        } catch (error) {
+            apiLogger.error('Failed to fetch profile', error);
+            throw error;
+        }
+    },
+
     async changePassword(data: { currentPassword: string; newPassword: string }) {
         try {
             return await apiPut<{ message: string }>('/auth/password', data);
@@ -133,6 +151,15 @@ export const paymentAPI = {
             return await apiPost<{ verified: boolean; message: string }>('/payments/verify', data);
         } catch (error) {
             apiLogger.error('Payment verification failed', error);
+            throw error;
+        }
+    },
+
+    async verifyBill(data: { billId: string; userLatitude: number; userLongitude: number }) {
+        try {
+            return await apiPost<{ success: boolean; message: string; nearestStoreName: string; distanceInMeters: number }>('/payments/verify-bill', data);
+        } catch (error) {
+            apiLogger.error('Bill verification failed', error);
             throw error;
         }
     },

@@ -36,6 +36,31 @@ const TICKET_CATEGORIES = [
   { label: "Other", value: "other" },
 ];
 
+
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <Pressable
+      style={styles.faqCard}
+      onPress={() => setIsOpen(!isOpen)}
+    >
+      <View style={styles.faqHeader}>
+        <Text style={styles.faqQuestion}>{question}</Text>
+        <ChevronDown
+          size={18}
+          color="#6b7280"
+          style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
+        />
+      </View>
+      {isOpen && (
+        <View style={styles.faqAnswerContainer}>
+          <Text style={styles.faqAnswer}>{answer}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 export default function HelpSupportScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<"faq" | "ticket">("faq");
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -111,8 +136,8 @@ export default function HelpSupportScreen({ navigation }: Props) {
                 item.status === "open"
                   ? "#e0f2fe"
                   : item.status === "closed"
-                  ? "#dcfce7"
-                  : "#fef3c7",
+                    ? "#dcfce7"
+                    : "#fef3c7",
             },
           ]}
         >
@@ -124,8 +149,8 @@ export default function HelpSupportScreen({ navigation }: Props) {
                   item.status === "open"
                     ? "#0ea5e9"
                     : item.status === "closed"
-                    ? "#22c55e"
-                    : "#b45309",
+                      ? "#22c55e"
+                      : "#b45309",
               },
             ]}
           >
@@ -181,6 +206,38 @@ export default function HelpSupportScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>
             Frequently Asked Questions
           </Text>
+
+          <FAQItem
+            question="How do I scan products?"
+            answer="Simply open the Scan tab, point your camera at the product's barcode, and hold it steady. The item will be automatically detected and added to your cart."
+          />
+
+          <FAQItem
+            question="What should I do if a product won't scan?"
+            answer="Ensure there is enough light and the barcode is flat. If it still doesn't work, you can try searching for the product manually or ask a store assistant for help."
+          />
+
+          <FAQItem
+            question="How do I pay for my items?"
+            answer="Once you've finished scanning, go to your Cart and tap 'Checkout'. You can pay using UPI, saved cards, or other available digital payment methods."
+          />
+
+          <FAQItem
+            question="What is an Exit Pass?"
+            answer="After a successful payment, the app generates a QR code known as an Exit Pass. Show this at the store's exit counter for verification before leaving."
+          />
+
+          <FAQItem
+            question="Can I remove items from my cart?"
+            answer="Yes! Open your Cart, and you can adjust quantities or remove items entirely by tapping the delete icon next to the product."
+          />
+
+          <FAQItem
+            question="Is my payment secure?"
+            answer="Absolutely. Billify uses industry-standard encryption and secure payment gateways to ensure your financial data is always protected."
+          />
+
+          <View style={{ height: 40 }} />
         </ScrollView>
       ) : (
         <>
@@ -265,7 +322,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                   style={[
                     styles.categoryOptionText,
                     category === cat.value &&
-                      styles.selectedCategoryText,
+                    styles.selectedCategoryText,
                   ]}
                 >
                   {cat.label}
@@ -355,4 +412,35 @@ const styles = StyleSheet.create({
   selectedCategory: { backgroundColor: "#e0f2fe" },
   categoryOptionText: { fontSize: 15 },
   selectedCategoryText: { color: "#0ea5e9", fontWeight: "600" },
+  faqCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  faqHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  faqQuestion: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1f2937",
+    flex: 1,
+    marginRight: 8,
+  },
+  faqAnswerContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+  },
+  faqAnswer: {
+    fontSize: 14,
+    color: "#4b5563",
+    lineHeight: 20,
+  },
 });

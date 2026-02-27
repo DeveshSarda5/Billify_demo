@@ -54,9 +54,11 @@ export default function EditProfileScreen({ navigation }: Props) {
 
         setLoading(true);
         try {
-            const updatedUser = await authAPI.updateProfile({ name, phone, location });
+            const response = await authAPI.updateProfile({ name, phone, location });
+            const { user: updatedUser, token } = response;
 
             // Update local storage
+            await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
 
             // Update global state

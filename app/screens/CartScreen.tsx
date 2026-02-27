@@ -1,15 +1,36 @@
 import { View, Text, FlatList, Pressable, StyleSheet, TextInput, Alert } from 'react-native';
-import { Plus, Minus, Trash2, Tag } from 'lucide-react-native';
+import { Plus, Minus, Trash2, Tag, ArrowDown } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import LocationHeader from '../components/LocationHeader';
+
+type SortOption = 'name' | 'quantity' | 'price' | 'none';
 
 export default function CartScreen() {
   const { items, updateQty, removeItem, total } = useCart();
   const navigation = useNavigation<any>();
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [sortBy, setSortBy] = useState<SortOption>('none');
+
+  // Get sorted items without mutating original cart state
+  const sortedItems = useMemo(() => {
+    if (sortBy === 'none') return items;
+
+    const itemsCopy = [...items];
+    
+    switch (sortBy) {
+      case 'name':
+        return itemsCopy.sort((a, b) => a.name.localeCompare(b.name));
+      case 'quantity':
+        return itemsCopy.sort((a, b) => b.qty - a.qty);
+      case 'price':
+        return itemsCopy.sort((a, b) => b.price - a.price);
+      default:
+        return itemsCopy;
+    }
+  }, [items, sortBy]);
 
   const applyCoupon = () => {
     if (coupon.trim().toUpperCase() === 'SAVE50') {
@@ -38,50 +59,103 @@ export default function CartScreen() {
   return (
     <View style={styles.container}>
       <LocationHeader />
+
+      {/* Sort Controls */}
+      <View style={styles.sortControls}>
+        <Text style={styles.sortLabel}>Sort by:</Text>
+        <View style={styles.sortButtons}>
+          <Pressable
+            style={[styles.sortBtn, sortBy === 'none' && styles.sortBtnActive]}
+            onPress={() => setSortBy('none')}
+          >
+            <Text style={[styles.sortBtnText, sortBy === 'none' && styles.sortBtnTextActive]}>
+              Default
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.sortBtn, sortBy === 'name' && styles.sortBtnActive]}
+            onPress={() => setSortBy('name')}
+          >
+            <Text style={[styles.sortBtnText, sortBy === 'name' && styles.sortBtnTextActive]}>
+              Name
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.sortBtn, sortBy === 'quantity' && styles.sortBtnActive]}
+            onPress={() => setSortBy('quantity')}
+          >
+            <Text style={[styles.sortBtnText, sortBy === 'quantity' && styles.sortBtnTextActive]}>
+              Qty
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.sortBtn, sortBy === 'price' && styles.sortBtnActive]}
+            onPress={() => setSortBy('price')}
+          >
+            <Text style={[styles.sortBtnText, sortBy === 'price' && styles.sortBtnTextActive]}>
+              Price
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       <FlatList
-        data={items}
+        data={sortedItems}
         keyExtractor={(item) => item.barcode}
         contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {/* Item info */}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
+        renderItem={({ item }) => {
+          // Derived calculation: quantity × price (no mutation)
+          const totalPrice = item.qty * item.price;
+          
+          return (
+            <View style={styles.card}>
+              {/* Left side: Item name and per-piece price */}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.pricePerPiece}>₹{item.price} per piece</Text>
+              </View>
+
+              {/* Right side: Quantity and total price */}
+              <View style={styles.rightSection}>
+                <Text style={styles.qtyLabel}>Qty: {item.qty}</Text>
+                <Text style={styles.totalPrice}>₹{totalPrice}</Text>
+              </View>
+
+              <View style={styles.controlsRow}>
+                {/* Quantity controls */}
+                <View style={styles.qtyRow}>
+                  <Pressable
+                    style={styles.qtyBtn}
+                    onPress={() =>
+                      item.qty === 1
+                        ? removeItem(item.barcode)
+                        : updateQty(item.barcode, item.qty - 1)
+                    }
+                  >
+                    <Minus size={16} color="#1f2937" />
+                  </Pressable>
+
+                  <Text style={styles.qty}>{item.qty}</Text>
+
+                  <Pressable
+                    style={styles.qtyBtn}
+                    onPress={() => updateQty(item.barcode, item.qty + 1)}
+                  >
+                    <Plus size={16} color="#1f2937" />
+                  </Pressable>
+                </View>
+
+                {/* Remove item */}
+                <Pressable
+                  onPress={() => removeItem(item.barcode)}
+                  style={styles.deleteBtn}
+                >
+                  <Trash2 size={18} color="#ef4444" />
+                </Pressable>
+              </View>
             </View>
-
-            {/* Quantity controls */}
-            <View style={styles.qtyRow}>
-              <Pressable
-                style={styles.qtyBtn}
-                onPress={() =>
-                  item.qty === 1
-                    ? removeItem(item.barcode)
-                    : updateQty(item.barcode, item.qty - 1)
-                }
-              >
-                <Minus size={16} color="#1f2937" />
-              </Pressable>
-
-              <Text style={styles.qty}>{item.qty}</Text>
-
-              <Pressable
-                style={styles.qtyBtn}
-                onPress={() => updateQty(item.barcode, item.qty + 1)}
-              >
-                <Plus size={16} color="#1f2937" />
-              </Pressable>
-            </View>
-
-            {/* Remove item */}
-            <Pressable
-              onPress={() => removeItem(item.barcode)}
-              style={styles.deleteBtn}
-            >
-              <Trash2 size={18} color="#ef4444" />
-            </Pressable>
-          </View>
-        )}
+          );
+        }}
       />
 
       {/* Footer */}
@@ -166,10 +240,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -177,36 +249,64 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1f2937',
   },
 
-  price: {
+  pricePerPiece: {
     marginTop: 4,
-    fontSize: 14,
+    fontSize: 13,
     color: '#6b7280',
+    fontWeight: '500',
+  },
+
+  /* Right section: Quantity and total price */
+  rightSection: {
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+
+  qtyLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 2,
+  },
+
+  totalPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#4caf50',
+  },
+
+  /* Controls row: Quantity buttons and delete */
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
   /* Quantity controls */
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
+    gap: 4,
   },
 
   qtyBtn: {
     backgroundColor: '#e5f4ea',
     padding: 6,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   qty: {
-    marginHorizontal: 10,
-    fontSize: 15,
+    marginHorizontal: 8,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
-    minWidth: 20,
+    minWidth: 18,
     textAlign: 'center',
   },
 
@@ -321,5 +421,45 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  /* Sort Controls */
+  sortControls: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderColor: '#e5e7eb',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  sortLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 6,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  sortBtn: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#f9fafb',
+  },
+  sortBtnActive: {
+    backgroundColor: '#4caf50',
+    borderColor: '#4caf50',
+  },
+  sortBtnText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  sortBtnTextActive: {
+    color: '#fff',
   },
 });

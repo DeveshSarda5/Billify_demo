@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, Modal } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { ShoppingCart, ScanLine } from 'lucide-react-native';
+import { ShoppingCart, ScanLine, X } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useLocation } from '../context/LocationContext';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +25,8 @@ export default function ScanScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [lastScannedItem, setLastScannedItem] = useState<any>(null);
 
   /* =======================
      PERMISSION HANDLING
@@ -58,14 +60,20 @@ export default function ScanScreen() {
         const storeProduct = findProductByBarcode(data, currentStore.id);
         
         if (storeProduct) {
+          // Immediately update cart state
           addItem({
             barcode: data,
             name: storeProduct.name,
             price: storeProduct.price,
           });
 
-          Alert.alert('✓ Added to Cart', `${storeProduct.name} - ₹${storeProduct.price}`);
-          setTimeout(() => setScanned(false), 1200);
+          // Store for confirmation UI
+          setLastScannedItem({
+            name: storeProduct.name,
+            price: storeProduct.price,
+          });
+
+          setShowConfirmation(true);
           return;
         }
       }
@@ -73,13 +81,20 @@ export default function ScanScreen() {
       // Fallback: Try API lookup
       const product = await productsAPI.getProductByBarcode(data);
 
+      // Immediately update cart state
       addItem({
         barcode: data,
         name: product.name,
         price: product.price,
       });
 
-      Alert.alert('✓ Added to Cart', `${product.name} - ₹${product.price}`);
+      // Store for confirmation UI
+      setLastScannedItem({
+        name: product.name,
+        price: product.price,
+      });
+
+      setShowConfirmation(true);
     } catch (err: any) {
       if (err.message === 'Product not found') {
         Alert.alert(
@@ -89,9 +104,18 @@ export default function ScanScreen() {
       } else {
         Alert.alert('Error', 'Failed to fetch product. Please try again.');
       }
-    } finally {
-      setTimeout(() => setScanned(false), 1200);
+      setTimeout(() => setScanned(false), 800);
     }
+  };
+
+  const handleScanMore = () => {
+    setShowConfirmation(false);
+    setScanned(false);
+  };
+
+  const handleGoToCart = () => {
+    setShowConfirmation(false);
+    navigation.navigate('Cart');
   };
 
   /* =======================
@@ -148,11 +172,13 @@ export default function ScanScreen() {
       <View style={styles.devWrapper}>
         <Pressable
           onPress={() => {
-            addItem(DEV_PRODUCT);
-            Alert.alert(
-              'DEV Item Added',
-              `${DEV_PRODUCT.name} - ₹${DEV_PRODUCT.price}`
-            );
+            const devItem = DEV_PRODUCT;
+            addItem(devItem);
+            setLastScannedItem({
+              name: devItem.name,
+              price: devItem.price,
+            });
+            setShowConfirmation(true);
           }}
           style={styles.devBtn}
         >
@@ -173,6 +199,52 @@ export default function ScanScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Confirmation Modal */}
+      <Modal visible={showConfirmation} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationCard}>
+            <Pressable
+              style={styles.closeBtn}
+              onPress={() => {
+                setShowConfirmation(false);
+                setTimeout(() => setScanned(false), 300);
+              }}
+            >
+              <X size={24} color="#6b7280" />
+            </Pressable>
+
+            <View style={styles.confirmationContent}>
+              <View style={styles.checkmark}>
+                <Text style={styles.checkmarkText}>✓</Text>
+              </View>
+
+              <Text style={styles.confirmationTitle}>Item Added to Cart</Text>
+
+              <View style={styles.itemDetails}>
+                <Text style={styles.itemName}>{lastScannedItem?.name}</Text>
+                <Text style={styles.itemPrice}>₹{lastScannedItem?.price}</Text>
+              </View>
+
+              <View style={styles.confirmationButtons}>
+                <Pressable
+                  style={styles.scanMoreBtn}
+                  onPress={handleScanMore}
+                >
+                  <Text style={styles.scanMoreText}>🔍 Scan More</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.goToCartBtn}
+                  onPress={handleGoToCart}
+                >
+                  <Text style={styles.goToCartText}>🛒 Go To Cart</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -311,5 +383,96 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4b5563',
     marginTop: 2,
+  },
+
+  /* Confirmation Modal Styles */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  confirmationCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingTop: 12,
+    maxHeight: '80%',
+  },
+  closeBtn: {
+    alignSelf: 'flex-end',
+    padding: 4,
+    marginRight: 8,
+  },
+  confirmationContent: {
+    alignItems: 'center',
+  },
+  checkmark: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#22c55e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  checkmarkText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  confirmationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  itemDetails: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 12,
+    width: '100%',
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#4caf50',
+    marginTop: 6,
+  },
+  confirmationButtons: {
+    width: '100%',
+    gap: 10,
+  },
+  scanMoreBtn: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  scanMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  goToCartBtn: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  goToCartText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
