@@ -39,6 +39,8 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+  
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>

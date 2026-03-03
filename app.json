@@ -7,14 +7,28 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+
+    "extra": {
+      "firebaseConfig": {
+        "apiKey": "AIzaSyA1DH9Ucen4Gxz7Z9lrcXu0HWDAucHjBXo",
+        "authDomain": "billify-37eba.firebaseapp.com",
+        "projectId": "billify-37eba",
+        "storageBucket": "billify-37eba.appspot.com",
+        "messagingSenderId": "1024285601405",
+        "appId": "1:1024285601405:web:8c9c7f8c9c7f8c9c7f8c9c"
+      }
+    },
+
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -23,9 +37,11 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "plugins": [
       [
         "expo-location",

@@ -53,34 +53,34 @@ export default function AppNavigator() {
   if (loading) return null;
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isLoggedIn ? (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen name="Scan" component={ScanScreen} />
-          <Stack.Screen name="Cart" component={CartScreen} />
-          <Stack.Screen name="Payment" component={PaymentScreen} />
-          <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
-          <Stack.Screen name="ExitPass" component={ExitPassScreen} />
-          <Stack.Screen name="PreviousBills" component={PreviousBillsScreen} />
-          <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
-          <Stack.Screen name="Offers" component={OffersScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
-          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-          <Stack.Screen name="TicketDetails" component={TicketDetailsScreen} />
-          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-          <Stack.Screen name="ManageUPI" component={ManageUPIScreen} />
-          <Stack.Screen name="ManageCards" component={ManageCardsScreen} />
-        </>
-      )}
-    </Stack.Navigator>
-  );
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    {!isLoggedIn ? (
+      <>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+      </>
+    ) : (
+      <>
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="Scan" component={ScanScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Payment" component={PaymentScreen} />
+        <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+        <Stack.Screen name="ExitPass" component={ExitPassScreen} />
+        <Stack.Screen name="PreviousBills" component={PreviousBillsScreen} />
+        <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
+        <Stack.Screen name="Offers" component={OffersScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+        <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+        <Stack.Screen name="TicketDetails" component={TicketDetailsScreen} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+        <Stack.Screen name="ManageUPI" component={ManageUPIScreen} />
+        <Stack.Screen name="ManageCards" component={ManageCardsScreen} />
+      </>
+    )}
+  </Stack.Navigator>
+);
 }
