@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { View, Text, TextInput, Button, Alert } from "react-native";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
-import { auth, default as firebaseApp } from "../config/firebase";
+import { auth, firebaseConfig } from "../config/firebase";
 import {
   signInWithPhoneNumber,
   PhoneAuthProvider,
@@ -66,7 +66,7 @@ return (
   <View style={{ padding: 20, flex: 1, justifyContent: "center" }}>
     <FirebaseRecaptchaVerifierModal
   ref={recaptchaVerifier}
-  firebaseConfig={firebaseApp.options}
+  firebaseConfig={firebaseConfig}
 />
 
       <Text style={{ fontSize: 20, marginBottom: 20 }}>

@@ -12,8 +12,7 @@ import {
 import { ShoppingCart } from 'lucide-react-native';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { useAuth } from '../context/AuthContext';
-import { auth } from '../config/firebase';
-import firebaseApp from '../config/firebase';
+import { auth, firebaseConfig } from '../config/firebase';
 import {
   signInWithPhoneNumber,
   PhoneAuthProvider,
@@ -134,7 +133,7 @@ export default function SignupScreen({ navigation }: any) {
     <View style={styles.container}>
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
-        firebaseConfig={firebaseApp.options}
+        firebaseConfig={firebaseConfig}
       />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
