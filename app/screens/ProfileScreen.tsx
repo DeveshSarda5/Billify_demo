@@ -195,60 +195,6 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.footer} />
         </ScrollView>
     );
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <View style={styles.iconBox}>
-                            <Phone size={20} color="#4caf50" />
-                        </View>
-                        <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>Phone</Text>
-                            <Text style={styles.infoValue}>{userData.phone}</Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
-
-            {/* Settings */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Settings</Text>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('EditProfile')}>
-                    <Text style={styles.settingText}>Edit Profile</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('ChangePassword')}>
-                    <Text style={styles.settingText}>Change Password</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('NotificationSettings')}>
-                    <Text style={styles.settingText}>Notifications</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
-                    <Text style={styles.settingText}>Privacy Policy</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('HelpSupport')}>
-                    <Text style={styles.settingText}>Help & Support</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-            </View>
-
-            {/* Logout Button */}
-            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                <LogOut size={20} color="#ef4444" />
-                <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
-
-            <View style={styles.footer} />
-        </ScrollView>
-    );
 }
 
 const styles = StyleSheet.create({
