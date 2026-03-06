@@ -16,6 +16,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   refreshProfile: () => Promise<void>;
+  sendEmailVerification: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>(null as any);
@@ -127,6 +128,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(false);
   };
 
+  // 📧 SEND EMAIL VERIFICATION
+  const sendEmailVerification = async () => {
+    if (!user?.email) throw new Error('No email found');
+    try {
+      await authAPI.resendVerificationEmail(user.email);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -138,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         setUser,
         refreshProfile,
+        sendEmailVerification,
       }}
     >
       {children}

@@ -1,21 +1,23 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { User, Mail, Phone, LogOut, ChevronRight, ArrowLeft, Edit2 } from 'lucide-react-native';
+import { User, Mail, Phone, LogOut, ChevronRight, ArrowLeft, Edit2, Check } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
-    const { logout, user } = useAuth();
+    const { logout, user, sendEmailVerification } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [verificationSending, setVerificationSending] = useState(false);
 
     // Provide default values if user is null or missing properties
     const userData = {
         name: user?.name || 'Guest User',
         email: user?.email || 'No email provided',
         phone: user?.phone || 'No phone provided',
+        emailVerified: user?.emailVerified || false,
     };
 
     const handleLogout = () => {
@@ -35,6 +37,21 @@ export default function ProfileScreen({ navigation }: Props) {
                 },
             ]
         );
+    };
+
+    const handleSendVerificationEmail = async () => {
+        try {
+            setVerificationSending(true);
+            await sendEmailVerification();
+            Alert.alert(
+                'Verification Email Sent',
+                'Check your email inbox for the verification link. Click the link to verify your email.'
+            );
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to send verification email');
+        } finally {
+            setVerificationSending(false);
+        }
     };
 
     if (loading) {
@@ -71,6 +88,25 @@ export default function ProfileScreen({ navigation }: Props) {
                 </View>
             </View>
 
+            {/* Email Verification Reminder */}
+            {!userData.emailVerified && (
+                <View style={styles.reminderBanner}>
+                    <View style={styles.reminderContent}>
+                        <Text style={styles.reminderTitle}>📧 Verify Your Email</Text>
+                        <Text style={styles.reminderText}>Add an extra layer of security to your account</Text>
+                    </View>
+                    <Pressable
+                        style={styles.reminderBtn}
+                        onPress={handleSendVerificationEmail}
+                        disabled={verificationSending}
+                    >
+                        <Text style={styles.reminderBtnText}>
+                            {verificationSending ? 'Sending...' : 'Send'}
+                        </Text>
+                    </Pressable>
+                </View>
+            )}
+
             {/* Account Info */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Account Information</Text>
@@ -92,11 +128,73 @@ export default function ProfileScreen({ navigation }: Props) {
                         <View style={styles.iconBox}>
                             <Mail size={20} color="#4caf50" />
                         </View>
-                        <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>Email</Text>
+                        <View style={[styles.infoContent, styles.emailRow]}>
+                            <View style={styles.emailLabelContainer}>
+                                <Text style={styles.infoLabel}>Email</Text>
+                                {userData.emailVerified && (
+                                    <View style={styles.verifiedBadge}>
+                                        <Check size={12} color="#fff" />
+                                        <Text style={styles.verifiedText}>Verified</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={styles.infoValue}>{userData.email}</Text>
                         </View>
                     </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoRow}>
+                        <View style={styles.iconBox}>
+                            <Phone size={20} color="#4caf50" />
+                        </View>
+                        <View style={styles.infoContent}>
+                            <Text style={styles.infoLabel}>Phone</Text>
+                            <Text style={styles.infoValue}>{userData.phone}</Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            {/* Settings */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Settings</Text>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('EditProfile')}>
+                    <Text style={styles.settingText}>Edit Profile</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('ChangePassword')}>
+                    <Text style={styles.settingText}>Change Password</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('NotificationSettings')}>
+                    <Text style={styles.settingText}>Notifications</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
+                    <Text style={styles.settingText}>Privacy Policy</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+
+                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('HelpSupport')}>
+                    <Text style={styles.settingText}>Help & Support</Text>
+                    <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+            </View>
+
+            {/* Logout Button */}
+            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+                <LogOut size={20} color="#ef4444" />
+                <Text style={styles.logoutText}>Logout</Text>
+            </Pressable>
+
+            <View style={styles.footer} />
+        </ScrollView>
+    );
 
                     <View style={styles.divider} />
 
@@ -213,6 +311,44 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#e8f5e9',
     },
+    reminderBanner: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 12,
+        backgroundColor: '#fef3c7',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderLeftWidth: 4,
+        borderLeftColor: '#f59e0b',
+    },
+    reminderContent: {
+        flex: 1,
+    },
+    reminderTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#92400e',
+        marginBottom: 4,
+    },
+    reminderText: {
+        fontSize: 12,
+        color: '#b45309',
+    },
+    reminderBtn: {
+        backgroundColor: '#f59e0b',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginLeft: 12,
+    },
+    reminderBtnText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
     section: {
         padding: 20,
     },
@@ -232,6 +368,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
     },
+    emailRow: {
+        flex: 1,
+    },
     iconBox: {
         width: 40,
         height: 40,
@@ -244,10 +383,29 @@ const styles = StyleSheet.create({
     infoContent: {
         flex: 1,
     },
+    emailLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     infoLabel: {
         fontSize: 12,
         color: '#6b7280',
         marginBottom: 2,
+    },
+    verifiedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#22c55e',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    verifiedText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#fff',
     },
     infoValue: {
         fontSize: 16,
