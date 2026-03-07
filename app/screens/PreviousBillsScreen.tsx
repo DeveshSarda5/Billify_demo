@@ -10,16 +10,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PreviousBills'>;
 
 interface Bill {
   _id: string;
+  id?: string;
   totalAmount: number;
   createdAt: string;
-  paymentStatus: string;
+  paymentStatus: 'pending' | 'paid';
   items: Array<{
+    productId?: string;
     name: string;
     price: number;
     quantity: number;
   }>;
   subtotal?: number;
   tax?: number;
+  exitPass?: string | null;
+  status?: 'pending' | 'paid' | 'verified';
 }
 
 type SortType = 'date' | 'price';
@@ -40,7 +44,11 @@ export default function PreviousBillsScreen({ navigation }: Props) {
     try {
       setLoading(true);
       const data = await billsAPI.getMyBills();
-      setBills(data);
+      const bills = data.map((bill: any) => ({
+        ...bill,
+        _id: bill._id || bill.id,
+      }));
+      setBills(bills);
     } catch (err: any) {
       setError(err.message || 'Failed to load bills');
     } finally {

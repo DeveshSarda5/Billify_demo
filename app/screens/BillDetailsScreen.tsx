@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   itemHeader: {
     flexDirection: 'row',
     marginBottom: 12,
-    paddingBottomWidth: 1,
+    borderBottomWidth: 1,
     paddingBottom: 8,
     borderBottomColor: '#e5e7eb',
   },

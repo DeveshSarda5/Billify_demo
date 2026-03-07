@@ -1,17 +1,14 @@
 /**
  * OTPVerificationScreen - Verify OTP sent to phone number
  * Used during Firebase phone authentication
+ * NOTE: This is a legacy screen - not currently registered in the app navigator
  */
 
 import { View, Text, StyleSheet, Pressable, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { useState } from 'react';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'OTPVerification'>;
-
-export default function OTPVerificationScreen({ route, navigation }: Props) {
-  const { phoneNumber } = route.params;
+export default function OTPVerificationScreen({ route, navigation }: any) {
+  const { phoneNumber } = route?.params || {};
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

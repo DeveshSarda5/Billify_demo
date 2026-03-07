@@ -3,7 +3,7 @@
  * Handles email/password authentication using backend API
  */
 
-import { auth } from '../config/firebaseConfig';
+import { auth } from '../config/firebase';
 
 /**
  * Sign out current user
