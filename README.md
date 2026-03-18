@@ -168,10 +168,11 @@ Create a `.env.development` file in the root directory:
 
 ```env
 # API Configuration
-EXPO_PUBLIC_API_BASE_URL=http://10.10.36.126:5000/api
+# Example: http://192.168.1.100:5000/api (replace with your backend server IP)
+EXPO_PUBLIC_API_BASE_URL=http://YOUR_BACKEND_IP:5000/api
 ```
 
-**Note:** Replace `10.10.36.126` with your actual backend server IP address.
+**Note:** Replace `YOUR_BACKEND_IP` with your actual backend server IP address (use `ipconfig` to find it). For local development, use your machine's local network IP (e.g., 192.168.x.x), not localhost.
 
 ### Generating Secrets
 
