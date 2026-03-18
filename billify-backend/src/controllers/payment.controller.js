@@ -5,11 +5,11 @@ const Bill = require('../models/Bill');
 const STORE_LOCATIONS = require('../config/storeLocations');
 const { calculateDistance } = require('../utils/distanceUtils');
 
-// Initialize Razorpay
-// Note: In production, these keys should be in .env
+// Initialize Razorpay with environment variables
+// Keys must be set in .env file (validated at server startup)
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder'
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 // @desc    Create Razorpay Order

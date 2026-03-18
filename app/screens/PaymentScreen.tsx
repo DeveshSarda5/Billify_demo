@@ -56,7 +56,7 @@ export default function PaymentScreen({ route, navigation }: Props) {
           description: 'Payment for Bill',
           image: 'https://i.imgur.com/3g7nmJC.png',
           currency: 'INR',
-          key: 'rzp_test_placeholder', // Should match backend
+          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '', // From environment or backend
           amount: orderData.amount,
           name: 'Billify',
           order_id: orderData.order_id,

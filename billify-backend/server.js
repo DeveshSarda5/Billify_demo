@@ -2,6 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
+const { validateEnvironment } = require('./src/config/env.validation');
+
+// Validate environment variables before starting
+try {
+  validateEnvironment();
+} catch (error) {
+  console.error('\n🔴 STARTUP FAILED - Environment Configuration Error');
+  console.error(error.message);
+  process.exit(1);
+}
 
 // Connect to Database
 connectDB();
@@ -40,6 +50,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
