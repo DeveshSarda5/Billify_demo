@@ -10,8 +10,8 @@ type AuthContextType = {
   signup: (data: {
     name: string;
     email: string;
-    phone: string;
     password: string;
+    phone?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -93,11 +93,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (data: {
     name: string;
     email: string;
-    phone: string;
     password: string;
+    phone?: string;
   }) => {
     try {
-      const response = (await authAPI.signup(data)) as AuthResponse;
+      const response = (await authAPI.signup({
+        ...data,
+        phone: data.phone || '',
+      })) as AuthResponse;
 
       const userData: User = {
         id: response.user.id,

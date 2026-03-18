@@ -7,15 +7,29 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "billify",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "OFF",
+      "fallbackToCacheTimeout": 0
+    },
+
+    "runtimeVersion": {
+      "policy": "nativeVersion"
+    },
 
     "extra": {
       "firebaseConfig": {
-        "apiKey": "AIzaSyA1DH9Ucen4Gxz7Z9lrcXu0HWDAucHjBXo",
+        "apiKey": "AIzaSyDoH873qEdIOsfstglFpsDn-bPz0WPJFzM",
         "authDomain": "billify-37eba.firebaseapp.com",
         "projectId": "billify-37eba",
-        "storageBucket": "billify-37eba.appspot.com",
-        "messagingSenderId": "1024285601405",
-        "appId": "1:1024285601405:web:8c9c7f8c9c7f8c9c7f8c9c"
+        "storageBucket": "billify-37eba.firebasestorage.app",
+        "messagingSenderId": "142514767464",
+        "appId": "1:142514767464:web:f04ee859395cc7eb941ddd"
       }
     },
 

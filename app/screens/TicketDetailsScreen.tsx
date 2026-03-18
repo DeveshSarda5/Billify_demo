@@ -55,7 +55,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
       setLoading(true);
       setError('');
       const ticketData = await supportAPI.getTicket(ticketId);
-      setTicket(ticketData);
+      setTicket(ticketData as TicketDetail);
     } catch (err: any) {
       setError(err.message || 'Failed to load ticket details');
     } finally {
@@ -78,7 +78,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
             setClosing(true);
             try {
               const updatedTicket = await supportAPI.closeTicket(ticketId);
-              setTicket(updatedTicket);
+              setTicket(updatedTicket as TicketDetail);
               Alert.alert('Success', 'Ticket closed successfully');
               navigation.goBack();
             } catch (err: any) {

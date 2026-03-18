@@ -50,16 +50,16 @@ export default function PaymentScreen({ route, navigation }: Props) {
 
     try {
       if (selectedMethod === 'razorpay') {
-        const { order } = await paymentAPI.createOrder(total);
+        const orderData = await paymentAPI.createOrder(total);
 
         const options = {
           description: 'Payment for Bill',
           image: 'https://i.imgur.com/3g7nmJC.png',
           currency: 'INR',
           key: 'rzp_test_placeholder', // Should match backend
-          amount: order.amount,
+          amount: orderData.amount,
           name: 'Billify',
-          order_id: order.id,
+          order_id: orderData.order_id,
           prefill: {
             email: user?.email,
             contact: user?.phone,

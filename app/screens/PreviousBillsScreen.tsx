@@ -2,24 +2,14 @@ import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Alert }
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useEffect, useState } from 'react';
-import { billsAPI } from '../services/api';
+import { billsAPI, BillResponse } from '../services/api';
 import { Trash2 } from 'lucide-react-native';
 import LocationHeader from '../components/LocationHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PreviousBills'>;
 
-interface Bill {
+interface Bill extends BillResponse {
   _id: string;
-  totalAmount: number;
-  createdAt: string;
-  paymentStatus: string;
-  items: Array<{
-    name: string;
-    price: number;
-    quantity: number;
-  }>;
-  subtotal?: number;
-  tax?: number;
 }
 
 export default function PreviousBillsScreen({ navigation }: Props) {
@@ -35,7 +25,12 @@ export default function PreviousBillsScreen({ navigation }: Props) {
     try {
       setLoading(true);
       const data = await billsAPI.getMyBills();
-      setBills(data);
+      // Ensure _id is set
+      const billsWithId = data.map((bill: any) => ({
+        ...bill,
+        _id: bill._id || bill.id,
+      }));
+      setBills(billsWithId);
     } catch (err: any) {
       setError(err.message || 'Failed to load bills');
     } finally {

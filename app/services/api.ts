@@ -71,7 +71,7 @@ export type BillResponse = {
 
 // Auth API
 export const authAPI = {
-    async signup(data: { name: string; email: string; phone: string; password: string }) {
+    async signup(data: { name: string; email: string; password: string; phone?: string }) {
         try {
             return await apiPost<AuthResponse>('/auth/signup', data, false);
         } catch (error) {

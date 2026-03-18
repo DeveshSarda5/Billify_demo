@@ -1,32 +1,29 @@
 /**
- * Firebase Authentication Service
- * Handles email/password authentication using backend API
+ * Authentication Service
+ * All authentication now handled via backend API
  */
-
-import { auth } from '../config/firebaseConfig';
 
 /**
  * Sign out current user
  */
 export const signOutUser = async (): Promise<void> => {
-  try {
-    await auth.signOut();
-  } catch (error: any) {
-    console.error('Sign out error:', error);
-    throw new Error(error.message || 'Failed to sign out');
-  }
+  // Logout is handled via AuthContext
+  // This function is kept for compatibility
 };
 
 /**
- * Check if user is authenticated via Firebase
+ * Check if user is authenticated
  */
 export const isFirebaseAuthenticated = (): boolean => {
-  return !!auth.currentUser;
+  // Authentication state is managed in AuthContext
+  // This is maintained for backward compatibility
+  return false;
 };
 
 /**
  * Get current user
  */
 export const getCurrentUser = () => {
-  return auth.currentUser;
+  // User data is stored in AsyncStorage and AuthContext
+  return null;
 };
