@@ -90,3 +90,54 @@ export const getAllStores = (): StoreLocation[] => {
 export const getStoreById = (id: string): StoreLocation | undefined => {
   return STORE_LOCATIONS.find((store) => store.id === id);
 };
+
+/**
+ * ============ WATERMARK UTILITIES ============
+ */
+
+export const RANDOM_WATERMARKS = [
+  'VERIFIED',
+  'ORIGINAL',
+  'CERTIFIED',
+  'AUTHENTIC',
+  'CONFIRMED',
+  'APPROVED',
+  'OFFICIAL',
+  'GENUINE',
+  'VALID',
+  'RECEIPT',
+];
+
+/**
+ * Get a random watermark text
+ */
+export const getRandomWatermark = (): string => {
+  return RANDOM_WATERMARKS[Math.floor(Math.random() * RANDOM_WATERMARKS.length)];
+};
+
+/**
+ * Generate watermark HTML for PDFs
+ */
+export const generateWatermarkHTML = (text: string): string => {
+  return `
+    <div style="
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 120px;
+      font-weight: bold;
+      opacity: 0.08;
+      color: #000;
+      z-index: 0;
+      width: 200%;
+      height: 200%;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      ${text}
+    </div>
+  `;
+};

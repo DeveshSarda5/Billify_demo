@@ -7,30 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "billify",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-
-    "updates": {
-      "enabled": false,
-      "checkAutomatically": "OFF",
-      "fallbackToCacheTimeout": 0
-    },
-
-    "runtimeVersion": {
-      "policy": "nativeVersion"
-    },
 
     "extra": {
-      "firebaseConfig": {
-        "apiKey": "AIzaSyDoH873qEdIOsfstglFpsDn-bPz0WPJFzM",
-        "authDomain": "billify-37eba.firebaseapp.com",
-        "projectId": "billify-37eba",
-        "storageBucket": "billify-37eba.firebasestorage.app",
-        "messagingSenderId": "142514767464",
-        "appId": "1:142514767464:web:f04ee859395cc7eb941ddd"
-      }
+      "apiBaseUrl": "$EXPO_PUBLIC_API_BASE_URL"
     },
 
     "splash": {

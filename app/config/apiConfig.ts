@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ============================================================================
 // API BASE URL - CRITICAL: Update this IP when backend location changes
 // ============================================================================
-export const API_BASE_URL = 'http://10.10.36.126:5000/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 // For development/debugging purposes
 export const DEBUG_MODE = true;

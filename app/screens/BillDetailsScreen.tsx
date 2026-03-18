@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ArrowLeft } from 'lucide-react-native';
+import { useState } from 'react';
+import { getRandomWatermark } from '../utils/locationUtils';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BillDetails'>;
 
@@ -20,8 +22,14 @@ interface Bill {
   exitPass?: string | null;
 }
 
+type ItemSortType = 'price' | 'quantity';
+type SortOrder = 'asc' | 'desc';
+
 export default function BillDetailsScreen({ route, navigation }: Props) {
   const { bill } = route.params as { bill: Bill };
+  const [itemSortType, setItemSortType] = useState<ItemSortType>('price');
+  const [itemSortOrder, setItemSortOrder] = useState<SortOrder>('desc');
+  const [watermark] = useState(getRandomWatermark());
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -34,8 +42,38 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
     });
   };
 
+  const getSortedItems = () => {
+    const sorted = [...(bill.items || [])].sort((a, b) => {
+      let compareValue = 0;
+      
+      if (itemSortType === 'price') {
+        compareValue = a.price - b.price;
+      } else {
+        compareValue = a.quantity - b.quantity;
+      }
+      
+      return itemSortOrder === 'asc' ? compareValue : -compareValue;
+    });
+    
+    return sorted;
+  };
+
+  const toggleItemSort = (newSortType: ItemSortType) => {
+    if (itemSortType === newSortType) {
+      setItemSortOrder(itemSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setItemSortType(newSortType);
+      setItemSortOrder('desc');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
+      {/* Watermark Overlay */}
+      <View style={styles.watermarkContainer}>
+        <Text style={styles.watermarkText}>{watermark}</Text>
+      </View>
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
@@ -61,14 +99,34 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
 
       {/* Items */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Items</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Items</Text>
+          <View style={styles.sortButtonsContainer}>
+            <Pressable
+              style={[styles.sortItemBtn, itemSortType === 'price' && styles.activeSortItemBtn]}
+              onPress={() => toggleItemSort('price')}
+            >
+              <Text style={[styles.sortItemBtnText, itemSortType === 'price' && styles.activeSortItemBtnText]}>
+                Price {itemSortType === 'price' && (itemSortOrder === 'asc' ? '↑' : '↓')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sortItemBtn, itemSortType === 'quantity' && styles.activeSortItemBtn]}
+              onPress={() => toggleItemSort('quantity')}
+            >
+              <Text style={[styles.sortItemBtnText, itemSortType === 'quantity' && styles.activeSortItemBtnText]}>
+                Qty {itemSortType === 'quantity' && (itemSortOrder === 'asc' ? '↑' : '↓')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
         <View style={styles.itemsCard}>
           <View style={styles.itemHeader}>
             <Text style={[styles.itemText, styles.itemName]}>Item</Text>
             <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
             <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
           </View>
-          {bill.items && bill.items.map((item, idx) => (
+          {getSortedItems().map((item, idx) => (
             <View key={idx} style={styles.itemRow}>
               <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{item.name}</Text>
               <Text style={[styles.itemValue, styles.itemQty]}>{item.quantity}</Text>
@@ -122,6 +180,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f9fafb',
   },
+  watermarkContainer: {
+    position: 'absolute',
+    top: '30%',
+    left: '50%',
+    zIndex: 0,
+    opacity: 0.08,
+  },
+  watermarkText: {
+    fontSize: 100,
+    fontWeight: 'bold',
+    color: '#000',
+    transform: [{ rotate: '-45deg' }],
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -142,11 +213,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
     color: '#1f2937',
+  },
+  sortButtonsContainer: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  sortItemBtn: {
+    backgroundColor: '#e5e7eb',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  activeSortItemBtn: {
+    backgroundColor: '#4caf50',
+  },
+  sortItemBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  activeSortItemBtnText: {
+    color: '#fff',
   },
   card: {
     backgroundColor: '#fff',

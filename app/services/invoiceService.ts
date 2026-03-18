@@ -5,6 +5,7 @@
 
 import * as Print from 'expo-print';
 import { Alert } from 'react-native';
+import { getRandomWatermark, generateWatermarkHTML } from '../utils/locationUtils';
 
 // Try to import expo-sharing, but make it optional
 let Sharing: any = null;
@@ -34,6 +35,9 @@ export interface InvoiceData {
  * Generate HTML for invoice PDF
  */
 const generateInvoiceHTML = (data: InvoiceData): string => {
+  const watermark = getRandomWatermark();
+  const watermarkHTML = generateWatermarkHTML(watermark);
+  
   const itemsHTML = data.items
     .map(
       (item) => `
@@ -63,6 +67,20 @@ const generateInvoiceHTML = (data: InvoiceData): string => {
             margin: 0;
             padding: 20px;
             background-color: #f9fafb;
+            position: relative;
+          }
+          .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 120px;
+            font-weight: bold;
+            opacity: 0.08;
+            color: #000;
+            z-index: 0;
+            pointer-events: none;
+            white-space: nowrap;
           }
           .container {
             max-width: 800px;
@@ -71,6 +89,8 @@ const generateInvoiceHTML = (data: InvoiceData): string => {
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
           }
           .header {
             display: flex;
@@ -177,6 +197,7 @@ const generateInvoiceHTML = (data: InvoiceData): string => {
         </style>
       </head>
       <body>
+        <div class="watermark">${watermark}</div>
         <div class="container">
           <div class="header">
             <div class="logo-section">

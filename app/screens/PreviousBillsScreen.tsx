@@ -12,10 +12,15 @@ interface Bill extends BillResponse {
   _id: string;
 }
 
+type SortType = 'date' | 'price';
+type SortOrder = 'asc' | 'desc';
+
 export default function PreviousBillsScreen({ navigation }: Props) {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sortType, setSortType] = useState<SortType>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   useEffect(() => {
     loadBills();
@@ -35,6 +40,31 @@ export default function PreviousBillsScreen({ navigation }: Props) {
       setError(err.message || 'Failed to load bills');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getSortedBills = () => {
+    const sorted = [...bills].sort((a, b) => {
+      let compareValue = 0;
+      
+      if (sortType === 'price') {
+        compareValue = a.totalAmount - b.totalAmount;
+      } else {
+        compareValue = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      
+      return sortOrder === 'asc' ? compareValue : -compareValue;
+    });
+    
+    return sorted;
+  };
+
+  const toggleSort = (newSortType: SortType) => {
+    if (sortType === newSortType) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortType(newSortType);
+      setSortOrder('desc');
     }
   };
 
@@ -89,13 +119,34 @@ export default function PreviousBillsScreen({ navigation }: Props) {
       <LocationHeader />
       <Text style={styles.title}>Previous Bills</Text>
 
+      {/* Sort Controls */}
+      <View style={styles.sortControls}>
+        <Pressable
+          style={[styles.sortBtn, sortType === 'date' && styles.activeSortBtn]}
+          onPress={() => toggleSort('date')}
+        >
+          <Text style={[styles.sortBtnText, sortType === 'date' && styles.activeSortBtnText]}>
+            📅 Date {sortType === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Text>
+        </Pressable>
+        
+        <Pressable
+          style={[styles.sortBtn, sortType === 'price' && styles.activeSortBtn]}
+          onPress={() => toggleSort('price')}
+        >
+          <Text style={[styles.sortBtnText, sortType === 'price' && styles.activeSortBtnText]}>
+            ₹ Price {sortType === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </Text>
+        </Pressable>
+      </View>
+
       {bills.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No bills yet</Text>
         </View>
       ) : (
         <FlatList
-          data={bills}
+          data={getSortedBills()}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
             <Pressable onPress={() => navigation.navigate('BillDetails', { bill: item })}>
@@ -175,7 +226,31 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  sortControls: {
+    flexDirection: 'row',
+    gap: 8,
     marginBottom: 16,
+  },
+  sortBtn: {
+    flex: 1,
+    backgroundColor: '#e5e7eb',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activeSortBtn: {
+    backgroundColor: '#4caf50',
+  },
+  sortBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  activeSortBtnText: {
+    color: '#fff',
   },
   billCard: {
     backgroundColor: '#fff',
