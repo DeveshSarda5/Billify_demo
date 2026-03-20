@@ -161,3 +161,117 @@ exports.resendVerificationEmail = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ================= OTP STORAGE (IN-MEMORY) =================
+// Format: { phoneNumber: { otp: '123456', timestamp: Date, verified: false } }
+const otpStorage = {};
+
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const isOTPExpired = (timestamp, expiryMinutes = 5) => {
+  const now = new Date();
+  const diff = (now - new Date(timestamp)) / (1000 * 60); // in minutes
+  return diff > expiryMinutes;
+};
+
+// ================= SEND OTP =================
+exports.sendOTP = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone || phone.trim() === '') {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    
+    // Store OTP with timestamp
+    otpStorage[phone] = {
+      otp,
+      timestamp: new Date(),
+      verified: false
+    };
+
+    // Log OTP for demo purposes
+    console.log(`\n📱 OTP for ${phone}: ${otp} (expires in 5 minutes)`);
+    console.log(`⏰ Generated at: ${new Date().toLocaleTimeString()}\n`);
+
+    res.status(200).json({
+      message: 'OTP sent successfully',
+      phone, // Return phone for confirmation
+    });
+
+  } catch (error) {
+    console.error('Send OTP Error:', error);
+    res.status(500).json({ message: error.message || 'Failed to send OTP' });
+  }
+};
+
+// ================= VERIFY OTP =================
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: 'Phone and OTP are required' });
+    }
+
+    // Check if OTP exists
+    const storedOTP = otpStorage[phone];
+    if (!storedOTP) {
+      return res.status(400).json({ message: 'OTP not found. Please request a new OTP.' });
+    }
+
+    // Check if OTP is expired
+    if (isOTPExpired(storedOTP.timestamp)) {
+      delete otpStorage[phone];
+      return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
+    }
+
+    // Check if OTP matches
+    if (storedOTP.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
+    }
+
+    // Mark as verified
+    otpStorage[phone].verified = true;
+
+    console.log(`✅ OTP verified for ${phone}`);
+
+    res.status(200).json({
+      message: 'OTP verified successfully',
+      phone,
+      verified: true
+    });
+
+  } catch (error) {
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({ message: error.message || 'Failed to verify OTP' });
+  }
+};
+
+// ================= CHECK PHONE VERIFICATION STATUS =================
+exports.checkPhoneVerification = async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    const otpData = otpStorage[phone];
+    const isVerified = otpData && otpData.verified === true;
+
+    res.status(200).json({
+      phone,
+      verified: isVerified
+    });
+
+  } catch (error) {
+    console.error('Check Phone Verification Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
