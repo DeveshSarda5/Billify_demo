@@ -134,6 +134,33 @@ export const authAPI = {
             throw error;
         }
     },
+
+    async sendOTP(phone: string) {
+        try {
+            return await apiPost<{ message: string; phone: string }>('/auth/send-otp', { phone }, false);
+        } catch (error) {
+            apiLogger.error('Failed to send OTP', error);
+            throw error;
+        }
+    },
+
+    async verifyOTP(phone: string, otp: string) {
+        try {
+            return await apiPost<{ message: string; phone: string; verified: boolean }>('/auth/verify-otp', { phone, otp }, false);
+        } catch (error) {
+            apiLogger.error('OTP verification failed', error);
+            throw error;
+        }
+    },
+
+    async checkPhoneVerification(phone: string) {
+        try {
+            return await apiGet<{ phone: string; verified: boolean }>(`/auth/check-phone-verification?phone=${phone}`);
+        } catch (error) {
+            apiLogger.error('Failed to check phone verification', error);
+            throw error;
+        }
+    },
 };
 
 // Payment API
@@ -233,6 +260,15 @@ export const billsAPI = {
             return await apiGet<BillResponse[]>('/bills/my');
         } catch (error) {
             apiLogger.error('Failed to fetch bills', error);
+            throw error;
+        }
+    },
+
+    async markBillPaid(billId: string) {
+        try {
+            return await apiPut<{ success: boolean; bill: BillResponse }>(`/bills/${billId}/mark-paid`, {});
+        } catch (error) {
+            apiLogger.error('Failed to mark bill as paid', error);
             throw error;
         }
     },

@@ -9,16 +9,17 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { ShoppingCart } from 'lucide-react-native';
+import { ShoppingCart, LogIn } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }: any) {
-  const { login } = useAuth();
+  const { login, guestLogin } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -39,7 +40,18 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  
+  const handleGuestLogin = async () => {
+    try {
+      setGuestLoading(true);
+      setError('');
+      await guestLogin();
+      Alert.alert('Guest Mode', 'You are logged in as a guest');
+    } catch (err: any) {
+      setError(err.message || 'Failed to login as guest');
+    } finally {
+      setGuestLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -90,6 +102,29 @@ export default function LoginScreen({ navigation }: any) {
               <Text style={styles.buttonText}>Login</Text>
             )}
           </Pressable>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Guest Login Button */}
+          <Pressable
+            style={[styles.guestButton, guestLoading && styles.guestButtonDisabled]}
+            onPress={handleGuestLogin}
+            disabled={guestLoading}
+          >
+            {guestLoading ? (
+              <ActivityIndicator color="#4caf50" />
+            ) : (
+              <>
+                <LogIn size={18} color="#4caf50" />
+                <Text style={styles.guestButtonText}>Continue as Guest</Text>
+              </>
+            )}
+          </Pressable>
         </View>
 
         {/* Switch */}
@@ -102,6 +137,14 @@ export default function LoginScreen({ navigation }: any) {
             Sign Up
           </Text>
         </Text>
+
+        {/* Guest Mode Info */}
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>👤 Guest Mode</Text>
+          <Text style={styles.infoText}>
+            Browse and scan items, manage cart, and view bills without creating an account.
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -172,13 +215,68 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#d1d5db',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  guestButton: {
+    backgroundColor: '#f0fdf4',
+    borderWidth: 2,
+    borderColor: '#4caf50',
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  guestButtonDisabled: {
+    opacity: 0.6,
+  },
+  guestButtonText: {
+    color: '#4caf50',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   switchText: {
     textAlign: 'center',
     fontSize: 14,
     color: '#6b7280',
+    marginBottom: 16,
   },
   link: {
     color: '#4caf50',
     fontWeight: '600',
+  },
+  infoBox: {
+    backgroundColor: '#ecfdf5',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  infoTitle: {
+    color: '#059669',
+    fontWeight: '600',
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  infoText: {
+    color: '#047857',
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

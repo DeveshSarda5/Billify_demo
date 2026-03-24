@@ -43,6 +43,12 @@ const requiredEnvVars = {
     description: 'Environment (development, production)',
     example: 'development',
   },
+
+  SERVER_IP: {
+    required: false,
+    description: 'Override auto-detected local IP for server startup logs and debug route',
+    example: '192.168.1.50',
+  },
 };
 
 /**
@@ -67,6 +73,20 @@ function validateEnvironment() {
       configured.push(varName);
     }
   });
+
+  // Razorpay pair validation (if one is set, both must be set)
+  const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+  const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+  if (razorpayKeyId || razorpayKeySecret) {
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      missing.push('RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET - both are required together for payments');
+    }
+
+    if (razorpayKeyId && !/^rzp_(test|live)_/.test(razorpayKeyId)) {
+      missing.push('RAZORPAY_KEY_ID - must start with rzp_test_ or rzp_live_');
+    }
+  }
 
   // Print startup report
   console.log('\n🔐 ENVIRONMENT VALIDATION REPORT');

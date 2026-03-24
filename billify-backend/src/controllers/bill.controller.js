@@ -80,3 +80,34 @@ exports.deleteBill = async (req, res) => {
         return res.status(500).json({ message: 'Server Error' });
     }
 };
+
+exports.markBillPaid = async (req, res) => {
+    try {
+        const bill = await Bill.findById(req.params.id);
+
+        if (!bill) {
+            return res.status(404).json({ message: 'Bill not found' });
+        }
+
+        // Ensure user owns the bill
+        if (bill.userId.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        if (bill.paymentStatus !== 'paid') {
+            bill.paymentStatus = 'paid';
+        }
+        if (bill.status !== 'paid' && bill.status !== 'verified') {
+            bill.status = 'paid';
+        }
+        if (!bill.exitPass) {
+            bill.exitPass = Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        const savedBill = await bill.save();
+        return res.json({ success: true, bill: savedBill });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};

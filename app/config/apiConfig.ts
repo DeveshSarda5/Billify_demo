@@ -5,10 +5,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * This file consolidates all API-related configuration and utilities
  */
 
-// ============================================================================
-// API BASE URL - CRITICAL: Update this IP when backend location changes
-// ============================================================================
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const envApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+
+if (!envApiBaseUrl) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_API_BASE_URL. Set it in your Expo environment (e.g. .env.development) to your ngrok URL ending with /api.',
+  );
+}
+
+// Remove trailing slash so endpoint concatenation remains stable.
+export const API_BASE_URL = envApiBaseUrl.replace(/\/+$/, '');
+
+// Log the active URL on app startup (development only)
+console.log('🔗 API Base URL:', API_BASE_URL);
 
 // For development/debugging purposes
 export const DEBUG_MODE = true;
@@ -70,9 +79,12 @@ export async function apiRequest<T>(
   const url = `${API_BASE_URL}${endpoint}`;
 
   try {
-    apiLogger.debug(`Starting ${fetchOptions.method || 'GET'} request`, url);
+    const method = fetchOptions.method || 'GET';
+    apiLogger.debug(`🔗 Starting ${method} request`, url);
 
     const headers = await getApiHeaders(includeAuth);
+    const requestStartTime = Date.now();
+    
     const response = await fetch(url, {
       ...fetchOptions,
       headers: {
@@ -81,7 +93,8 @@ export async function apiRequest<T>(
       },
     });
 
-    apiLogger.debug(`Response received`, {
+    const responseTime = Date.now() - requestStartTime;
+    apiLogger.debug(`✅ Response received (${responseTime}ms)`, {
       status: response.status,
       statusText: response.statusText,
       url,
@@ -96,7 +109,7 @@ export async function apiRequest<T>(
         // Response is not JSON, use default error message
       }
 
-      apiLogger.error(`Request failed with status ${response.status}`, {
+      apiLogger.error(`❌ Request failed with status ${response.status}`, {
         url,
         error: errorMessage,
       });
@@ -105,31 +118,72 @@ export async function apiRequest<T>(
     }
 
     const responseData: T = await response.json();
-    apiLogger.debug('Response parsed successfully', endpoint);
+    apiLogger.debug('✅ Response parsed successfully', endpoint);
     return responseData;
   } catch (error) {
     if (error instanceof TypeError) {
       // Network error
+      const errorMsg = error.message || 'Unknown network error';
       apiLogger.error(
-        'Network request failed - Backend might be unreachable',
+        '🚨 Network request failed - Backend might be unreachable',
         {
           url,
           endpoint,
-          error: error.message,
+          error: errorMsg,
+          baseURL: API_BASE_URL,
         },
       );
       throw new Error(
-        `Network Error: ${error.message}. Backend at ${API_BASE_URL} may be unreachable.`,
+        `Network Error: Cannot reach backend at ${API_BASE_URL}. Make sure:\n1. Backend server is running\n2. EXPO_PUBLIC_API_BASE_URL points to your active ngrok URL\n3. ngrok tunnel is running and forwarding to port 5000\n\nError: ${errorMsg}`,
       );
     }
 
-    apiLogger.error('API request failed', {
+    if (error instanceof Error && error.message.includes('Network Error')) {
+      // Re-throw our custom network errors
+      throw error;
+    }
+
+    apiLogger.error('❌ API request failed', {
       url,
       endpoint,
       error: error instanceof Error ? error.message : String(error),
     });
 
     throw error;
+  }
+}
+
+/**
+ * Test backend connectivity
+ * Call this to verify backend is reachable
+ */
+export async function testBackendConnection(): Promise<boolean> {
+  try {
+    apiLogger.info('🧪 Testing backend connectivity...');
+    const testUrl = `${API_BASE_URL.replace('/api', '')}/api/test`;
+    apiLogger.debug('Test URL:', testUrl);
+
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      apiLogger.info('✅ Backend is reachable!', data);
+      return true;
+    } else {
+      apiLogger.error('❌ Backend test failed with status', response.status);
+      return false;
+    }
+  } catch (error) {
+    apiLogger.error('❌ Backend connection test failed', {
+      error: error instanceof Error ? error.message : String(error),
+      baseURL: API_BASE_URL,
+    });
+    return false;
   }
 }
 

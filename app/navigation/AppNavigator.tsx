@@ -21,6 +21,21 @@ import TicketDetailsScreen from '../screens/TicketDetailsScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import ManageUPIScreen from '../screens/UpiManagementScreen';
 import ManageCardsScreen from '../screens/CardsScreen';
+import RazorpayCheckoutScreen from '../screens/RazorpayCheckoutScreen';
+
+export type RazorpayCheckoutParams = {
+  requestId: string;
+  keyId: string;
+  orderId: string;
+  amount: number;
+  amountRupees: number;
+  currency: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+};
 
 export type RootStackParamList = {
   Login: undefined;
@@ -43,6 +58,7 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined;
   ManageUPI: undefined;
   ManageCards: undefined;
+  RazorpayCheckout: RazorpayCheckoutParams;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +95,7 @@ export default function AppNavigator() {
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
         <Stack.Screen name="ManageUPI" component={ManageUPIScreen} />
         <Stack.Screen name="ManageCards" component={ManageCardsScreen} />
+        <Stack.Screen name="RazorpayCheckout" component={RazorpayCheckoutScreen} />
       </>
     )}
   </Stack.Navigator>

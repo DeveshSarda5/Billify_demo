@@ -31,3 +31,16 @@ android/app/src/main/res/raw/*.wav
 ios/
 *.swp
 *.lock
+
+# local diagnostics and generated reports
+ip.txt
+API_CONFIG_SUMMARY.md
+COMPLETE_NETWORK_FIX.md
+DEPLOYMENT_READY.txt
+FINAL_SUMMARY.md
+FIX_COMPLETE.md
+GO_LIVE.md
+NETWORK_CONFIG.md
+READY_TO_LAUNCH.md
+test-endpoints.ps1
+verify-setup.ps1

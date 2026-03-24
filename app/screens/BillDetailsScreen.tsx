@@ -1,9 +1,12 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { getRandomWatermark } from '../utils/locationUtils';
+import { useAuth } from '../context/AuthContext';
+import { openRazorpayWebCheckout } from '../services/razorpayPayment';
+import { billsAPI } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BillDetails'>;
 
@@ -27,9 +30,12 @@ type SortOrder = 'asc' | 'desc';
 
 export default function BillDetailsScreen({ route, navigation }: Props) {
   const { bill } = route.params as { bill: Bill };
+  const [currentBill, setCurrentBill] = useState<Bill>(bill);
   const [itemSortType, setItemSortType] = useState<ItemSortType>('price');
   const [itemSortOrder, setItemSortOrder] = useState<SortOrder>('desc');
   const [watermark] = useState(getRandomWatermark());
+  const { user } = useAuth();
+  const [paying, setPaying] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -43,7 +49,7 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
   };
 
   const getSortedItems = () => {
-    const sorted = [...(bill.items || [])].sort((a, b) => {
+    const sorted = [...(currentBill.items || [])].sort((a, b) => {
       let compareValue = 0;
       
       if (itemSortType === 'price') {
@@ -56,6 +62,37 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
     });
     
     return sorted;
+  };
+
+  const onPayNow = async () => {
+    if (paying || currentBill.paymentStatus === 'paid') return;
+    setPaying(true);
+    try {
+      const payment = await openRazorpayWebCheckout(navigation, currentBill.totalAmount, {
+        email: user?.email,
+        phone: user?.phone,
+        name: user?.name,
+      });
+
+      console.log('[BillDetails] Payment success payment_id:', payment.razorpay_payment_id);
+      Alert.alert('Payment Successful', `Payment ID: ${payment.razorpay_payment_id}`);
+
+      const response = await billsAPI.markBillPaid(currentBill._id);
+      if (response?.bill) {
+        setCurrentBill(response.bill as any);
+      } else {
+        setCurrentBill({ ...currentBill, paymentStatus: 'paid' });
+      }
+    } catch (error: any) {
+      if (error?.code === 0) {
+        Alert.alert('Cancelled', 'Payment was cancelled');
+      } else {
+        Alert.alert('Payment Failed', error?.description || error?.message || 'Payment failed');
+      }
+      console.log('[BillDetails] Payment failed:', error);
+    } finally {
+      setPaying(false);
+    }
   };
 
   const toggleItemSort = (newSortType: ItemSortType) => {
@@ -86,16 +123,28 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
       {/* Bill Summary */}
       <View style={styles.card}>
         <Text style={styles.label}>Bill ID</Text>
-        <Text style={styles.value}>{bill._id.substring(0, 12)}...</Text>
+        <Text style={styles.value}>{currentBill._id.substring(0, 12)}...</Text>
 
         <Text style={[styles.label, { marginTop: 16 }]}>Date</Text>
-        <Text style={styles.value}>{formatDate(bill.createdAt)}</Text>
+        <Text style={styles.value}>{formatDate(currentBill.createdAt)}</Text>
 
         <Text style={[styles.label, { marginTop: 16 }]}>Status</Text>
-        <Text style={[styles.value, { color: bill.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
-          {bill.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
+        <Text style={[styles.value, { color: currentBill.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
+          {currentBill.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
         </Text>
       </View>
+
+      {currentBill.paymentStatus !== 'paid' && (
+        <View style={styles.section}>
+          <Pressable
+            style={[styles.payNowBtn, paying && { opacity: 0.6 }]}
+            disabled={paying}
+            onPress={onPayNow}
+          >
+            <Text style={styles.payNowText}>{paying ? 'Processing...' : `Pay Now ₹${currentBill.totalAmount.toFixed(2)}`}</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Items */}
       <View style={styles.section}>
@@ -142,29 +191,29 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
         <View style={styles.totalsCard}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>₹{(bill.subtotal || bill.totalAmount).toFixed(2)}</Text>
+            <Text style={styles.totalValue}>₹{(currentBill.subtotal || currentBill.totalAmount).toFixed(2)}</Text>
           </View>
-          {bill.tax !== undefined && bill.tax > 0 && (
+          {currentBill.tax !== undefined && currentBill.tax > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Tax (GST):</Text>
-              <Text style={styles.totalValue}>₹{bill.tax.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>₹{currentBill.tax.toFixed(2)}</Text>
             </View>
           )}
           <View style={[styles.totalRow, styles.grandTotalRow]}>
             <Text style={styles.grandTotalLabel}>Total Amount:</Text>
-            <Text style={styles.grandTotalValue}>₹{bill.totalAmount.toFixed(2)}</Text>
+            <Text style={styles.grandTotalValue}>₹{currentBill.totalAmount.toFixed(2)}</Text>
           </View>
         </View>
       </View>
 
       {/* Exit Pass (if paid) */}
-      {bill.paymentStatus === 'paid' && bill.exitPass && (
+      {currentBill.paymentStatus === 'paid' && currentBill.exitPass && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Exit Pass</Text>
           <View style={[styles.card, styles.exitPassCard]}>
             <Text style={styles.success}>✅ Payment Successful</Text>
             <Text style={styles.passIdLabel}>Pass ID</Text>
-            <Text style={styles.passId}>{bill.exitPass}</Text>
+            <Text style={styles.passId}>{currentBill.exitPass}</Text>
             <Text style={styles.passNote}>Show this at the exit gate</Text>
           </View>
         </View>
@@ -261,6 +310,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
+  },
+  payNowBtn: {
+    backgroundColor: '#22c55e',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  payNowText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   exitPassCard: {
     alignItems: 'center',

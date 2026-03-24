@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCart } from '../context/CartContext';
-import { billsAPI, paymentAPI } from '../services/api';
-import RazorpayCheckout from 'react-native-razorpay';
+import { billsAPI } from '../services/api';
+import { openRazorpayWebCheckout } from '../services/razorpayPayment';
 import { useAuth } from '../context/AuthContext';
 import LocationHeader from '../components/LocationHeader';
 
@@ -50,32 +50,14 @@ export default function PaymentScreen({ route, navigation }: Props) {
 
     try {
       if (selectedMethod === 'razorpay') {
-        const orderData = await paymentAPI.createOrder(total);
-
-        const options = {
-          description: 'Payment for Bill',
-          image: 'https://i.imgur.com/3g7nmJC.png',
-          currency: 'INR',
-          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '', // From environment or backend
-          amount: orderData.amount,
-          name: 'Billify',
-          order_id: orderData.order_id,
-          prefill: {
-            email: user?.email,
-            contact: user?.phone,
-            name: user?.name,
-          },
-          theme: { color: '#4caf50' }
-        };
-
-        const data = await RazorpayCheckout.open(options);
-
-        await paymentAPI.verifyPayment({
-          razorpay_order_id: data.razorpay_order_id,
-          razorpay_payment_id: data.razorpay_payment_id,
-          razorpay_signature: data.razorpay_signature,
-          amount: total
+        const data = await openRazorpayWebCheckout(navigation, total, {
+          email: user?.email,
+          phone: user?.phone,
+          name: user?.name,
         });
+
+        Alert.alert('Payment Successful', `Payment ID: ${data.razorpay_payment_id}`);
+        console.log('[Payment] Success payment_id:', data.razorpay_payment_id);
 
         await processBillCreation(data.razorpay_payment_id);
       } else {
@@ -85,7 +67,8 @@ export default function PaymentScreen({ route, navigation }: Props) {
       if (error.code === 0) {
         Alert.alert('Cancelled', 'Payment was cancelled');
       } else {
-        Alert.alert('Error', error.description || error.message || 'Payment failed');
+        Alert.alert('Payment Failed', error.description || error.message || 'Payment failed');
+        console.log('[Payment] Failed:', error);
       }
     } finally {
       setProcessing(false);
