@@ -55,7 +55,7 @@ export default function RatingModal({
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <View style={styles.successContainer}>
-              <Text style={styles.successIcon}>✓</Text>
+              <Text style={styles.successIcon}>Done</Text>
               <Text style={styles.successTitle}>Thank You!</Text>
               <Text style={styles.successMessage}>
                 Your rating for {storeName} has been recorded.
@@ -75,7 +75,7 @@ export default function RatingModal({
           <View style={styles.header}>
             <Text style={styles.title}>Rate your experience</Text>
             <Pressable onPress={handleClose} disabled={loading}>
-              <Text style={styles.closeBtn}>✕</Text>
+              <Text style={styles.closeBtn}>x</Text>
             </Pressable>
           </View>
 

@@ -92,7 +92,7 @@ export default function ProfileScreen({ navigation }: Props) {
             {!userData.emailVerified && (
                 <View style={styles.reminderBanner}>
                     <View style={styles.reminderContent}>
-                        <Text style={styles.reminderTitle}>📧 Verify Your Email</Text>
+                        <Text style={styles.reminderTitle}>Verify Your Email</Text>
                         <Text style={styles.reminderText}>Add an extra layer of security to your account</Text>
                     </View>
                     <Pressable

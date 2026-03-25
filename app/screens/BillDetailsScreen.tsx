@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { getRandomWatermark } from '../utils/locationUtils';
 import { useAuth } from '../context/AuthContext';
-import { openRazorpayWebCheckout } from '../services/razorpayPayment';
+import { getReadableRazorpayError, openRazorpayWebCheckout } from '../services/razorpayPayment';
 import { billsAPI } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BillDetails'>;
@@ -87,7 +87,7 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
       if (error?.code === 0) {
         Alert.alert('Cancelled', 'Payment was cancelled');
       } else {
-        Alert.alert('Payment Failed', error?.description || error?.message || 'Payment failed');
+        Alert.alert('Payment Failed', getReadableRazorpayError(error));
       }
       console.log('[BillDetails] Payment failed:', error);
     } finally {
@@ -130,12 +130,15 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
 
         <Text style={[styles.label, { marginTop: 16 }]}>Status</Text>
         <Text style={[styles.value, { color: currentBill.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
-          {currentBill.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
+          {currentBill.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
         </Text>
       </View>
 
       {currentBill.paymentStatus !== 'paid' && (
         <View style={styles.section}>
+          <Text style={styles.paymentHint}>
+            Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234. Make sure the app is pointing to your active HTTPS ngrok /api URL.
+          </Text>
           <Pressable
             style={[styles.payNowBtn, paying && { opacity: 0.6 }]}
             disabled={paying}
@@ -211,7 +214,7 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Exit Pass</Text>
           <View style={[styles.card, styles.exitPassCard]}>
-            <Text style={styles.success}>✅ Payment Successful</Text>
+            <Text style={styles.success}>Payment Successful</Text>
             <Text style={styles.passIdLabel}>Pass ID</Text>
             <Text style={styles.passId}>{currentBill.exitPass}</Text>
             <Text style={styles.passNote}>Show this at the exit gate</Text>
@@ -316,6 +319,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  paymentHint: {
+    marginBottom: 12,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#92400e',
+    backgroundColor: '#fffbeb',
+    borderRadius: 10,
+    padding: 10,
   },
   payNowText: {
     color: '#fff',

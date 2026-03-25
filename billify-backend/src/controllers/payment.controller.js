@@ -1,35 +1,51 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const path = require('path');
-const dotenv = require('dotenv');
 const Payment = require('../models/Payment');
 const Bill = require('../models/Bill');
 const STORE_LOCATIONS = require('../config/storeLocations');
 const { calculateDistance } = require('../utils/distanceUtils');
 
-// Function to always get fresh env values
-const getRazorpayInstance = () => {
-    // Reload .env at request time so updated keys are picked up without process restarts.
-    dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
+const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
-    const key_id = (process.env.RAZORPAY_KEY_ID || '').trim();
-    const key_secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+const razorpay = razorpayKeyId && razorpayKeySecret
+    ? new Razorpay({
+        key_id: razorpayKeyId,
+        key_secret: razorpayKeySecret,
+    })
+    : null;
 
-    const maskedKey = key_id ? `${key_id.slice(0, 10)}...${key_id.slice(-4)}` : '❌ Missing';
-    console.log("🔑 Razorpay Key:", maskedKey);
-    console.log("🔐 Secret Loaded:", key_secret ? "✅ Yes" : "❌ No");
+function getMaskedKey(keyId) {
+    if (!keyId) {
+        return 'missing';
+    }
 
-    if (!key_id || !key_secret) {
+    return `${keyId.slice(0, 12)}...${keyId.slice(-4)}`;
+}
+
+function ensureRazorpayReady() {
+    if (!razorpay || !razorpayKeyId || !razorpayKeySecret) {
         throw new Error('Razorpay keys missing in .env');
     }
 
-    return new Razorpay({ key_id, key_secret });
-};
+    if (!razorpayKeyId.startsWith('rzp_test_')) {
+        throw new Error('Razorpay test key required. Configure RAZORPAY_KEY_ID with an rzp_test_* key.');
+    }
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 // @desc Create Order
 exports.createOrder = async (req, res) => {
     try {
-        const razorpay = getRazorpayInstance(); // ✅ fresh instance
+        ensureRazorpayReady();
 
         const { amount } = req.body;
 
@@ -41,30 +57,45 @@ exports.createOrder = async (req, res) => {
         }
 
         const amountInPaise = Math.round(amount * 100);
+        const receipt = `receipt_${Date.now()}`;
+
+        console.log('Creating Razorpay order', {
+            amountRupees: Number(amount),
+            amountPaise: amountInPaise,
+            currency: 'INR',
+            receipt,
+            keyId: razorpayKeyId,
+        });
 
         const order = await razorpay.orders.create({
             amount: amountInPaise,
             currency: 'INR',
-            receipt: `receipt_${Date.now()}`,
+            receipt,
         });
 
-        console.log('✅ Razorpay order created:', { orderId: order.id, amount: order.amount });
+        console.log('Razorpay order created', {
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency,
+            keyId: razorpayKeyId,
+        });
 
         res.json({
             success: true,
             id: order.id,
+            order_id: order.id,
             amount: order.amount,
             currency: order.currency,
+            key: razorpayKeyId,
         });
 
     } catch (error) {
-        console.error("❌ Razorpay Error:", error);
+        console.error('Razorpay order creation failed:', error);
 
         if (error?.statusCode === 401) {
-            const currentKey = (process.env.RAZORPAY_KEY_ID || '').trim();
             return res.status(502).json({
                 success: false,
-                message: `Razorpay authentication failed for key ${currentKey ? `${currentKey.slice(0, 10)}...${currentKey.slice(-4)}` : 'missing'}. Check backend .env key pair`,
+                message: `Razorpay authentication failed for key ${getMaskedKey(razorpayKeyId)}. Check backend .env test key pair.`,
             });
         }
 
@@ -111,6 +142,180 @@ exports.verifyPayment = async (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Verification failed' });
     }
+};
+
+// @desc Hosted Razorpay checkout page for external browser flow
+// @route GET /api/payments/checkout
+// @access Public
+exports.hostedCheckoutPage = async (req, res) => {
+    ensureRazorpayReady();
+
+        const {
+                keyId,
+                orderId,
+                amount,
+                currency = 'INR',
+                requestId,
+                callbackUrl,
+                name = '',
+                email = '',
+                phone = '',
+        } = req.query;
+
+            const effectiveKeyId = String(keyId || razorpayKeyId);
+
+            if (!orderId || !amount || !requestId || !callbackUrl) {
+                return res.status(400).send('Missing checkout parameters');
+        }
+
+            if (keyId && String(keyId) !== razorpayKeyId) {
+                console.warn('Hosted checkout received mismatched Razorpay key. Using backend test key instead.', {
+                    receivedKeyId: String(keyId),
+                    backendKeyId: razorpayKeyId,
+                    orderId: String(orderId),
+                });
+            }
+
+        const options = {
+                key: effectiveKeyId,
+                amount: Number(amount),
+                currency: String(currency),
+                name: 'Billify',
+            description: 'Test Payment',
+                order_id: String(orderId),
+                prefill: {
+                        name: String(name),
+                        email: String(email),
+                        contact: String(phone),
+                },
+            theme: { color: '#3399cc' },
+        };
+
+        console.log('Serving hosted Razorpay checkout', {
+            orderId: String(orderId),
+            amount: Number(amount),
+            currency: String(currency),
+            requestId: String(requestId),
+            keyId: effectiveKeyId,
+        });
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+                    <title>Billify Payment</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                            color: #14532d;
+                        }
+                        .card {
+                            width: calc(100% - 32px);
+                            max-width: 420px;
+                            background: #ffffff;
+                            border-radius: 20px;
+                            padding: 24px;
+                            box-shadow: 0 20px 60px rgba(20, 83, 45, 0.12);
+                        }
+                        h1 {
+                            margin: 0 0 10px;
+                            font-size: 26px;
+                            color: #166534;
+                        }
+                        p {
+                            margin: 0;
+                            line-height: 1.6;
+                            color: #3f3f46;
+                        }
+                        .hint {
+                            margin-top: 14px;
+                            padding: 12px;
+                            border-radius: 12px;
+                            background: #fffbeb;
+                            color: #92400e;
+                            font-size: 13px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h1>Opening secure payment</h1>
+                        <p>Billify is launching Razorpay in your browser.</p>
+                        <p class="hint">Use Razorpay test mode only. For card testing use 4111 1111 1111 1111, any future expiry, CVV 123, OTP 1234.</p>
+                    </div>
+                    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                    <script>
+                        const callbackBase = ${JSON.stringify(String(callbackUrl))};
+                        const activeRequestId = ${JSON.stringify(String(requestId))};
+                        const options = ${JSON.stringify(options)};
+
+                        console.log('Billify Razorpay checkout init', {
+                            key: options.key,
+                            order_id: options.order_id,
+                            amount: options.amount,
+                            currency: options.currency,
+                        });
+
+                        function redirectToApp(status, payload) {
+                            const params = new URLSearchParams({
+                                status,
+                                requestId: activeRequestId,
+                            });
+
+                            Object.entries(payload || {}).forEach(([key, value]) => {
+                                if (value !== undefined && value !== null && value !== '') {
+                                    params.set(key, String(value));
+                                }
+                            });
+
+                            const separator = callbackBase.includes('?') ? '&' : '?';
+                            window.location.replace(callbackBase + separator + params.toString());
+                        }
+
+                        options.handler = function (response) {
+                            redirectToApp('success', response || {});
+                        };
+
+                        options.modal = {
+                            ondismiss: function () {
+                                redirectToApp('cancelled', { description: 'Payment was cancelled' });
+                            },
+                        };
+
+                        const razorpay = new Razorpay(options);
+
+                        razorpay.on('payment.failed', function (response) {
+                            const error = response && response.error ? response.error : {};
+                            redirectToApp('failed', {
+                                code: error.code || '',
+                                description: error.description || error.reason || 'Payment failed',
+                            });
+                        });
+
+                        window.onload = function () {
+                            setTimeout(function () {
+                                try {
+                                    razorpay.open();
+                                } catch (error) {
+                                    redirectToApp('failed', { description: error && error.message ? error.message : 'Could not open Razorpay checkout' });
+                                }
+                            }, 250);
+                        };
+                    </script>
+                </body>
+            </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html.replace('Billify', escapeHtml('Billify')));
 };
 
 // KEEP YOUR verifyBill and testDistance SAME (no change needed)

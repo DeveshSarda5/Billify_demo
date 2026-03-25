@@ -3,6 +3,7 @@
     "name": "billify-mobile",
     "slug": "billify-mobile",
     "version": "1.0.0",
+    "scheme": "billify",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

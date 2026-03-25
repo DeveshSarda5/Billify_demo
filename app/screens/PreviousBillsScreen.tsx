@@ -126,7 +126,7 @@ export default function PreviousBillsScreen({ navigation }: Props) {
           onPress={() => toggleSort('date')}
         >
           <Text style={[styles.sortBtnText, sortType === 'date' && styles.activeSortBtnText]}>
-            📅 Date {sortType === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Date {sortType === 'date' && (sortOrder === 'asc' ? '\u2191' : '\u2193')}
           </Text>
         </Pressable>
         
@@ -157,7 +157,7 @@ export default function PreviousBillsScreen({ navigation }: Props) {
                     <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
                     <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
                     <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
-                      {item.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Pending'}
+                      {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                     </Text>
                   </View>
                   <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
@@ -205,7 +205,7 @@ export default function PreviousBillsScreen({ navigation }: Props) {
                     style={styles.exitPassBtn}
                     onPress={() => navigation.navigate('BillDetails', { bill: item })}
                   >
-                    <Text style={styles.exitPassBtnText}>📋 View Exit Pass</Text>
+                    <Text style={styles.exitPassBtnText}>View Exit Pass</Text>
                   </Pressable>
                 )}
               </View>

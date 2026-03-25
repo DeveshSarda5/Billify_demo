@@ -7,6 +7,16 @@ const generateToken = (id) => {
   });
 };
 
+const serializeUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  location: user.location,
+  role: user.role,
+  emailVerified: user.emailVerified,
+});
+
 // ================= SIGNUP =================
 exports.signup = async (req, res) => {
   try {
@@ -23,17 +33,12 @@ exports.signup = async (req, res) => {
       phone,
       password,
       emailVerified: true, // Always true now
+      role: 'user',
     });
 
     res.status(201).json({
       token: generateToken(user._id),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        location: user.location,
-      },
+      user: serializeUser(user),
     });
 
   } catch (error) {
@@ -51,13 +56,7 @@ exports.login = async (req, res) => {
     if (user && (await user.comparePassword(password))) {
       res.json({
         token: generateToken(user._id),
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          location: user.location,
-        },
+        user: serializeUser(user),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -102,13 +101,7 @@ exports.updateProfile = async (req, res) => {
 
       res.json({
         token: generateToken(updatedUser._id),
-        user: {
-          id: updatedUser._id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          phone: updatedUser.phone,
-          location: updatedUser.location,
-        },
+        user: serializeUser(updatedUser),
       });
     } else {
       res.status(404).json({ message: 'User not found' });

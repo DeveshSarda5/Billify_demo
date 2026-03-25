@@ -39,7 +39,7 @@ export default function LocationSelector({ visible, onClose }: LocationSelectorP
           <View style={styles.header}>
             <Text style={styles.title}>Select Location</Text>
             <Pressable onPress={onClose}>
-              <Text style={styles.closeBtn}>✕</Text>
+              <Text style={styles.closeBtn}>x</Text>
             </Pressable>
           </View>
 
@@ -59,7 +59,7 @@ export default function LocationSelector({ visible, onClose }: LocationSelectorP
                 <View style={styles.storeInfo}>
                   <Text style={styles.storeName}>{item.name}</Text>
                   <Text style={styles.storeCoords}>
-                    📍 {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                    {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
                   </Text>
                   <Text style={styles.storeRadius}>Radius: {item.radius}m</Text>
                 </View>

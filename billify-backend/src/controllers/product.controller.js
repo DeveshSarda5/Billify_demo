@@ -1,5 +1,14 @@
 const Product = require('../models/Product');
 
+exports.getAllProducts = async (req, res) => {
+    try {
+        const products = await Product.find().sort({ createdAt: -1 });
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 exports.getProductByBarcode = async (req, res) => {
     try {
         const { barcode } = req.params;

@@ -236,7 +236,7 @@ export default function SignupScreen({ navigation }: any) {
             </>
           ) : (
             <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedText}>✓ Phone Verified ({phone})</Text>
+              <Text style={styles.verifiedText}>Phone Verified ({phone})</Text>
             </View>
           )}
         </View>

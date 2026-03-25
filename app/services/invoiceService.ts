@@ -219,7 +219,7 @@ const generateInvoiceHTML = (data: InvoiceData): string => {
             </div>
             <div>
               <h3>Payment Status</h3>
-              <p>✓ Completed</p>
+              <p>Completed</p>
             </div>
           </div>
 

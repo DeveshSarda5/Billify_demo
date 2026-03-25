@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [phoneVerified, setPhoneVerified] = useState(false);
 
-  // 🔁 Restore auth state on app load
+  // Restore auth state on app load
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 🔐 LOGIN
+  // LOGIN
   const login = async (email: string, password: string) => {
     try {
       const response = (await authAPI.login({
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 👤 GUEST LOGIN
+  // GUEST LOGIN
   const guestLogin = async () => {
     try {
       const guestUser: User = {
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 📝 SIGNUP
+  // SIGNUP
   const signup = async (data: {
     name: string;
     email: string;
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 🔓 LOGOUT
+  // LOGOUT
   const logout = async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPhoneVerified(false);
   };
 
-  // 📧 SEND EMAIL VERIFICATION
+  // SEND EMAIL VERIFICATION
   const sendEmailVerification = async () => {
     if (!user?.email) throw new Error("No email found");
     try {

@@ -17,7 +17,7 @@ if (!envApiBaseUrl) {
 export const API_BASE_URL = envApiBaseUrl.replace(/\/+$/, '');
 
 // Log the active URL on app startup (development only)
-console.log('🔗 API Base URL:', API_BASE_URL);
+console.log('[API] Base URL:', API_BASE_URL);
 
 // For development/debugging purposes
 export const DEBUG_MODE = true;
@@ -80,7 +80,7 @@ export async function apiRequest<T>(
 
   try {
     const method = fetchOptions.method || 'GET';
-    apiLogger.debug(`🔗 Starting ${method} request`, url);
+    apiLogger.debug(`Starting ${method} request`, url);
 
     const headers = await getApiHeaders(includeAuth);
     const requestStartTime = Date.now();
@@ -94,7 +94,7 @@ export async function apiRequest<T>(
     });
 
     const responseTime = Date.now() - requestStartTime;
-    apiLogger.debug(`✅ Response received (${responseTime}ms)`, {
+    apiLogger.debug(`Response received (${responseTime}ms)`, {
       status: response.status,
       statusText: response.statusText,
       url,
@@ -109,7 +109,7 @@ export async function apiRequest<T>(
         // Response is not JSON, use default error message
       }
 
-      apiLogger.error(`❌ Request failed with status ${response.status}`, {
+      apiLogger.error(`Request failed with status ${response.status}`, {
         url,
         error: errorMessage,
       });
@@ -118,14 +118,14 @@ export async function apiRequest<T>(
     }
 
     const responseData: T = await response.json();
-    apiLogger.debug('✅ Response parsed successfully', endpoint);
+    apiLogger.debug('Response parsed successfully', endpoint);
     return responseData;
   } catch (error) {
     if (error instanceof TypeError) {
       // Network error
       const errorMsg = error.message || 'Unknown network error';
       apiLogger.error(
-        '🚨 Network request failed - Backend might be unreachable',
+        'Network request failed - Backend might be unreachable',
         {
           url,
           endpoint,
@@ -143,7 +143,7 @@ export async function apiRequest<T>(
       throw error;
     }
 
-    apiLogger.error('❌ API request failed', {
+    apiLogger.error('API request failed', {
       url,
       endpoint,
       error: error instanceof Error ? error.message : String(error),
@@ -159,7 +159,7 @@ export async function apiRequest<T>(
  */
 export async function testBackendConnection(): Promise<boolean> {
   try {
-    apiLogger.info('🧪 Testing backend connectivity...');
+    apiLogger.info('Testing backend connectivity...');
     const testUrl = `${API_BASE_URL.replace('/api', '')}/api/test`;
     apiLogger.debug('Test URL:', testUrl);
 
@@ -172,14 +172,14 @@ export async function testBackendConnection(): Promise<boolean> {
 
     if (response.ok) {
       const data = await response.json();
-      apiLogger.info('✅ Backend is reachable!', data);
+      apiLogger.info('Backend is reachable!', data);
       return true;
     } else {
-      apiLogger.error('❌ Backend test failed with status', response.status);
+      apiLogger.error('Backend test failed with status', response.status);
       return false;
     }
   } catch (error) {
-    apiLogger.error('❌ Backend connection test failed', {
+    apiLogger.error('Backend connection test failed', {
       error: error instanceof Error ? error.message : String(error),
       baseURL: API_BASE_URL,
     });

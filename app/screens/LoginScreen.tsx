@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }: any) {
 
     try {
       await login(email, password);
-      Alert.alert('Login Successful', 'Welcome back to Billify 👋');
+      Alert.alert('Login Successful', 'Welcome back to Billify');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -140,7 +140,7 @@ export default function LoginScreen({ navigation }: any) {
 
         {/* Guest Mode Info */}
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>👤 Guest Mode</Text>
+          <Text style={styles.infoTitle}>Guest Mode</Text>
           <Text style={styles.infoText}>
             Browse and scan items, manage cart, and view bills without creating an account.
           </Text>

@@ -8,6 +8,7 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import {
   cancelRazorpayWebCheckout,
   completeRazorpayWebCheckout,
+  getReadableRazorpayError,
   type PaymentSuccess,
 } from '../services/razorpayPayment';
 import { apiLogger } from '../config/apiConfig';
@@ -26,14 +27,14 @@ function buildCheckoutHtml(params: Props['route']['params']) {
     amount: params.amount,
     currency: params.currency,
     name: 'Billify',
-    description: 'Bill Payment',
+    description: 'Test Payment',
     order_id: params.orderId,
     prefill: {
       name: params.prefill?.name || '',
       email: params.prefill?.email || '',
       contact: params.prefill?.phone || '',
     },
-    theme: { color: '#22c55e' },
+    theme: { color: '#3399cc' },
   };
 
   return `
@@ -77,6 +78,9 @@ function buildCheckoutHtml(params: Props['route']['params']) {
         <div class="card">
           <h1>Opening Razorpay</h1>
           <p>Wait while Billify launches secure checkout.</p>
+          <p style="margin-top:12px; font-size:13px; color:#92400e; background:#fffbeb; padding:12px; border-radius:12px;">
+            Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234.
+          </p>
         </div>
         <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
         <script>
@@ -89,6 +93,12 @@ function buildCheckoutHtml(params: Props['route']['params']) {
           };
 
           const options = ${JSON.stringify(options)};
+          console.log('Billify Razorpay WebView checkout init', {
+            key: options.key,
+            order_id: options.order_id,
+            amount: options.amount,
+            currency: options.currency,
+          });
           options.handler = function (response) {
             sendMessage('success', response);
           };
@@ -177,7 +187,7 @@ export default function RazorpayCheckoutScreen({ route, navigation }: Props) {
       handledRef.current = true;
       cancelRazorpayWebCheckout(requestId, {
         code: message.payload?.code,
-        description: message.payload?.description || message.payload?.reason || 'Payment failed',
+        description: getReadableRazorpayError(message.payload),
       });
       navigation.goBack();
       return;
@@ -221,6 +231,8 @@ export default function RazorpayCheckoutScreen({ route, navigation }: Props) {
         startInLoadingState
         thirdPartyCookiesEnabled
         sharedCookiesEnabled
+        cacheEnabled={false}
+        incognito
       />
 
       {(loading || finishing) && (

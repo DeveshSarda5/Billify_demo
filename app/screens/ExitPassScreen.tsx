@@ -54,7 +54,7 @@ export default function ExitPassScreen({ navigation, route }: Props) {
         if (response.success) {
           setVerified(true);
           setVerificationData(response);
-          Alert.alert('✅ Verified', `You're verified at ${response.nearestStoreName}`);
+          Alert.alert('Verified', `You're verified at ${response.nearestStoreName}`);
         }
       } else {
         setVerificationError('No bill ID provided');
@@ -62,7 +62,7 @@ export default function ExitPassScreen({ navigation, route }: Props) {
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Verification failed';
       setVerificationError(errorMessage);
-      Alert.alert('❌ Verification Failed', errorMessage);
+      Alert.alert('Verification Failed', errorMessage);
     } finally {
       setVerifying(false);
     }
@@ -73,7 +73,7 @@ export default function ExitPassScreen({ navigation, route }: Props) {
       <Text style={styles.title}>Exit Pass</Text>
 
       <View style={styles.card}>
-        <Text style={styles.success}>✅ Payment Successful</Text>
+        <Text style={styles.success}>Payment Successful</Text>
 
         <Text style={styles.label}>Pass ID</Text>
         <Text style={styles.passId}>{passId}</Text>
@@ -99,7 +99,7 @@ export default function ExitPassScreen({ navigation, route }: Props) {
             </>
           ) : verificationError ? (
             <>
-              <Text style={styles.errorText}>⚠️ {verificationError}</Text>
+              <Text style={styles.errorText}>{verificationError}</Text>
               <Pressable style={styles.retryBtn} onPress={verifyBillLocation}>
                 <Text style={styles.retryText}>Retry Verification</Text>
               </Pressable>

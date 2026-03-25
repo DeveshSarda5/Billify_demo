@@ -182,7 +182,7 @@ export default function ScanScreen() {
           }}
           style={styles.devBtn}
         >
-          <Text style={styles.devText}>➕ Add Test Item (DEV)</Text>
+          <Text style={styles.devText}>+ Add Test Item (DEV)</Text>
         </Pressable>
       </View>
 
@@ -216,7 +216,7 @@ export default function ScanScreen() {
 
             <View style={styles.confirmationContent}>
               <View style={styles.checkmark}>
-                <Text style={styles.checkmarkText}>✓</Text>
+                <Text style={styles.checkmarkText}>OK</Text>
               </View>
 
               <Text style={styles.confirmationTitle}>Item Added to Cart</Text>
@@ -231,14 +231,14 @@ export default function ScanScreen() {
                   style={styles.scanMoreBtn}
                   onPress={handleScanMore}
                 >
-                  <Text style={styles.scanMoreText}>🔍 Scan More</Text>
+                  <Text style={styles.scanMoreText}>Scan More</Text>
                 </Pressable>
 
                 <Pressable
                   style={styles.goToCartBtn}
                   onPress={handleGoToCart}
                 >
-                  <Text style={styles.goToCartText}>🛒 Go To Cart</Text>
+                  <Text style={styles.goToCartText}>Go To Cart</Text>
                 </Pressable>
               </View>
             </View>

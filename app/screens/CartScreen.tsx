@@ -1,9 +1,10 @@
 import { View, Text, FlatList, Pressable, StyleSheet, TextInput, Alert } from 'react-native';
-import { Plus, Minus, Trash2, Tag, ArrowDown } from 'lucide-react-native';
+import { Plus, Minus, Trash2, Tag } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import LocationHeader from '../components/LocationHeader';
+import { offersAPI, type OfferResponse } from '../services/api';
 
 type SortOption = 'name' | 'quantity' | 'price' | 'none';
 
@@ -13,6 +14,15 @@ export default function CartScreen() {
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>('none');
+  const [activeOffers, setActiveOffers] = useState<OfferResponse[]>([]);
+
+  useEffect(() => {
+    offersAPI.getActiveOffers()
+      .then(setActiveOffers)
+      .catch(() => {
+        // Silently fallback — no offers will be shown
+      });
+  }, []);
 
   // Get sorted items without mutating original cart state
   const sortedItems = useMemo(() => {
@@ -33,17 +43,40 @@ export default function CartScreen() {
   }, [items, sortBy]);
 
   const applyCoupon = () => {
-    if (coupon.trim().toUpperCase() === 'SAVE50') {
-      setDiscount(50);
-      Alert.alert('Success', 'Coupon Applied! You saved ₹50');
-    } else if (coupon.trim().toUpperCase() === 'WELCOME10') {
-      const disc = Math.round(total * 0.1);
-      setDiscount(disc);
-      Alert.alert('Success', `Coupon Applied! You saved ₹${disc}`);
-    } else {
-      Alert.alert('Invalid Coupon', 'This coupon is not valid.');
+    const code = coupon.trim().toUpperCase();
+    const matched = activeOffers.find((o) => o.couponCode === code);
+
+    if (!matched) {
+      Alert.alert('Invalid Coupon', 'This coupon is not valid or has expired.');
       setDiscount(0);
+      return;
     }
+
+    if (matched.currentUsage >= matched.maxUsage) {
+      Alert.alert('Coupon Expired', 'This coupon has reached its maximum redemption limit.');
+      setDiscount(0);
+      return;
+    }
+
+    let disc = 0;
+    if (matched.discountType === 'percentage') {
+      disc = Math.round(total * (matched.discountValue / 100));
+    } else if (matched.discountType === 'fixed') {
+      disc = matched.discountValue;
+    } else if (matched.discountType === 'bogo') {
+      disc = matched.discountValue;
+    }
+
+    disc = Math.min(disc, total);
+    setDiscount(disc);
+    Alert.alert('Coupon Applied', `${matched.name} applied! You saved ₹${disc}`);
+  };
+
+  const getOfferDescription = (offer: OfferResponse) => {
+    if (offer.discountType === 'percentage') return `${offer.discountValue}% off`;
+    if (offer.discountType === 'fixed') return `₹${offer.discountValue} off`;
+    if (offer.discountType === 'bogo') return `Buy One Get One`;
+    return '';
   };
 
   if (items.length === 0) {
@@ -178,17 +211,17 @@ export default function CartScreen() {
         </View>
 
         {/* Available Coupons */}
-        <View style={styles.couponList}>
-          <Text style={styles.couponListTitle}>Available Coupons:</Text>
-          <View style={styles.couponItem}>
-            <Text style={styles.couponCode}>SAVE50</Text>
-            <Text style={styles.couponDesc}> - Flat ₹50 off</Text>
+        {activeOffers.length > 0 && (
+          <View style={styles.couponList}>
+            <Text style={styles.couponListTitle}>Available Coupons:</Text>
+            {activeOffers.map((offer) => (
+              <View key={offer._id} style={styles.couponItem}>
+                <Text style={styles.couponCode}>{offer.couponCode}</Text>
+                <Text style={styles.couponDesc}> - {getOfferDescription(offer)}</Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.couponItem}>
-            <Text style={styles.couponCode}>WELCOME10</Text>
-            <Text style={styles.couponDesc}> - 10% off on total</Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Subtotal:</Text>

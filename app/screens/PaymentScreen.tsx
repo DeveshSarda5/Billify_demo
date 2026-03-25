@@ -4,14 +4,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCart } from '../context/CartContext';
 import { billsAPI } from '../services/api';
-import { openRazorpayWebCheckout } from '../services/razorpayPayment';
+import { getReadableRazorpayError, openRazorpayWebCheckout } from '../services/razorpayPayment';
 import { useAuth } from '../context/AuthContext';
 import LocationHeader from '../components/LocationHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
 const PAYMENT_OPTIONS = [
-  { id: 'razorpay', label: 'Online Payment (UPI/Card/Netbanking)' },
+  { id: 'razorpay', label: 'Online Payment (Razorpay Test Mode)' },
   { id: 'cod', label: 'Cash at Counter' },
 ];
 
@@ -67,7 +67,7 @@ export default function PaymentScreen({ route, navigation }: Props) {
       if (error.code === 0) {
         Alert.alert('Cancelled', 'Payment was cancelled');
       } else {
-        Alert.alert('Payment Failed', error.description || error.message || 'Payment failed');
+        Alert.alert('Payment Failed', getReadableRazorpayError(error));
         console.log('[Payment] Failed:', error);
       }
     } finally {
@@ -84,6 +84,9 @@ export default function PaymentScreen({ route, navigation }: Props) {
       <View style={styles.amountCard}>
         <Text style={styles.amountLabel}>Amount to Pay</Text>
         <Text style={styles.amount}>₹{total}</Text>
+        <Text style={styles.testHint}>
+          Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234. Make sure EXPO_PUBLIC_API_BASE_URL points to your active HTTPS ngrok /api URL.
+        </Text>
       </View>
 
       {/* Payment Method */}
@@ -172,6 +175,15 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginTop: 6,
+  },
+  testHint: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#92400e',
+    backgroundColor: '#fffbeb',
+    borderRadius: 10,
+    padding: 10,
   },
   methodCard: {
     backgroundColor: '#fff',

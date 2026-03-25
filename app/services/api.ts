@@ -31,6 +31,8 @@ export type PaymentOrderResponse = {
     order_id: string;
     amount: number;
     currency: string;
+    key: string;
+    success?: boolean;
 };
 
 export type SupportTicketResponse = {
@@ -278,6 +280,32 @@ export const billsAPI = {
             return await apiDelete<{ message: string }>(`/bills/${id}`);
         } catch (error) {
             apiLogger.error(`Failed to delete bill with ID: ${id}`, error);
+            throw error;
+        }
+    },
+};
+
+// Offers/Discounts API (public — no auth required)
+export type OfferResponse = {
+    _id: string;
+    name: string;
+    couponCode: string;
+    discountType: 'percentage' | 'fixed' | 'bogo';
+    discountValue: number;
+    applicableProducts: string;
+    startDate: string;
+    endDate: string;
+    status: 'Active' | 'Scheduled' | 'Expired';
+    maxUsage: number;
+    currentUsage: number;
+};
+
+export const offersAPI = {
+    async getActiveOffers() {
+        try {
+            return await apiGet<OfferResponse[]>('/offers/active', false);
+        } catch (error) {
+            apiLogger.error('Failed to fetch active offers', error);
             throw error;
         }
     },

@@ -72,10 +72,31 @@ const app = express();
 const detectedIP = process.env.SERVER_IP || getLocalIPv4Address();
 
 
-// ✅ CORS FIX (important for iPhone / network requests)
+const allowedOrigins = [
+  /^http:\/\/localhost:\d+$/,
+  /^http:\/\/127\.0\.0\.1:\d+$/,
+  /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^https?:\/\/[a-z0-9-]+\.ngrok(?:-free)?\.app$/,
+  /^exp:\/\//,
+  /^http:\/\/.*:8081$/,
+];
+
 app.use(cors({
-  origin: '*', // allow all devices (for dev/demo)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isAllowed = allowedOrigins.some((pattern) => pattern.test(origin));
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
@@ -99,6 +120,11 @@ app.use('/api/payments', require('./src/routes/payment.routes'));
 // Alias requested by mobile integration docs: /api/payment/create-order
 app.use('/api/payment', require('./src/routes/payment.routes'));
 app.use('/api/support', require('./src/routes/support.routes'));
+app.use('/api/admin', require('./src/routes/admin.routes'));
+
+// Public route for active offers (used by the mobile app — no auth required)
+const { getActiveOffers } = require('./src/controllers/admin.controller');
+app.get('/api/offers/active', getActiveOffers);
 
 
 // Health check route (VERY IMPORTANT for testing)
