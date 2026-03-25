@@ -1,18 +1,24 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { User, Mail, Phone, LogOut, ChevronRight, ArrowLeft, Edit2, Check } from 'lucide-react-native';
-import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Check, ChevronRight, Edit2, Mail, Phone, User } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AppButton from '../components/ui/AppButton';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import Screen from '../components/ui/Screen';
+import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
     const { logout, user, sendEmailVerification } = useAuth();
+    const { colors, isDark } = useAppTheme();
     const [loading, setLoading] = useState(false);
     const [verificationSending, setVerificationSending] = useState(false);
 
-    // Provide default values if user is null or missing properties
     const userData = {
         name: user?.name || 'Guest User',
         email: user?.email || 'No email provided',
@@ -21,32 +27,25 @@ export default function ProfileScreen({ navigation }: Props) {
     };
 
     const handleLogout = () => {
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: async () => {
-                        setLoading(true);
-                        await logout();
-                        setLoading(false);
-                    }
+        Alert.alert('Logout', 'Are you sure you want to logout?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Logout',
+                style: 'destructive',
+                onPress: async () => {
+                    setLoading(true);
+                    await logout();
+                    setLoading(false);
                 },
-            ]
-        );
+            },
+        ]);
     };
 
     const handleSendVerificationEmail = async () => {
         try {
             setVerificationSending(true);
             await sendEmailVerification();
-            Alert.alert(
-                'Verification Email Sent',
-                'Check your email inbox for the verification link. Click the link to verify your email.'
-            );
+            Alert.alert('Verification Email Sent', 'Check your email inbox for the verification link.');
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to send verification email');
         } finally {
@@ -56,272 +55,228 @@ export default function ProfileScreen({ navigation }: Props) {
 
     if (loading) {
         return (
-            <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color="#4caf50" />
-                <Text style={styles.loadingText}>Logging out...</Text>
-            </View>
+            <Screen>
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={[styles.loadingText, { color: colors.textMuted }]}>Logging out...</Text>
+                </View>
+            </Screen>
         );
     }
 
     return (
-        <ScrollView style={styles.container}>
-            {/* Unified Header */}
-            <View style={styles.header}>
-                {/* Navigation Row */}
-                <View style={styles.headerNav}>
-                    <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <ArrowLeft size={24} color="#fff" />
-                    </Pressable>
-                    <Text style={styles.headerTitle}>My Profile</Text>
-                    <Pressable onPress={() => navigation.navigate('EditProfile')} style={styles.backBtn}>
-                        <Edit2 size={20} color="#fff" />
-                    </Pressable>
-                </View>
-
-                {/* Avatar & User Info */}
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatar}>
-                        <User size={40} color="#fff" />
-                    </View>
-                    <Text style={styles.name}>{userData.name}</Text>
-                    <Text style={styles.email}>{userData.email}</Text>
-                </View>
-            </View>
-
-            {/* Email Verification Reminder */}
-            {!userData.emailVerified && (
-                <View style={styles.reminderBanner}>
-                    <View style={styles.reminderContent}>
-                        <Text style={styles.reminderTitle}>Verify Your Email</Text>
-                        <Text style={styles.reminderText}>Add an extra layer of security to your account</Text>
-                    </View>
+        <Screen scrollable>
+            <AppHeader
+                title="My Profile"
+                subtitle="Manage your account details, security, and support access."
+                onBack={() => navigation.goBack()}
+                rightSlot={
                     <Pressable
-                        style={styles.reminderBtn}
-                        onPress={handleSendVerificationEmail}
-                        disabled={verificationSending}
+                        onPress={() => navigation.navigate('EditProfile')}
+                        style={({ pressed }) => [
+                            styles.editButton,
+                            { backgroundColor: colors.card, borderColor: colors.border },
+                            pressed && styles.pressed,
+                        ]}
                     >
-                        <Text style={styles.reminderBtnText}>
-                            {verificationSending ? 'Sending...' : 'Send'}
-                        </Text>
+                        <Edit2 size={18} color={colors.primary} />
                     </Pressable>
+                }
+            />
+
+            <LinearGradient
+                colors={isDark ? ['#052e16', '#166534'] : ['#dcfce7', '#f0fdf4']}
+                style={[styles.hero, { borderColor: colors.border }]}
+            >
+                <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                    <User size={36} color="#fff" />
                 </View>
-            )}
+                <Text style={[styles.name, { color: colors.text }]}>{userData.name}</Text>
+                <Text style={[styles.email, { color: colors.textMuted }]}>{userData.email}</Text>
+            </LinearGradient>
 
-            {/* Account Info */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Account Information</Text>
-
-                <View style={styles.card}>
-                    <View style={styles.infoRow}>
-                        <View style={styles.iconBox}>
-                            <User size={20} color="#4caf50" />
+            {!userData.emailVerified ? (
+                <AppCard style={{ backgroundColor: colors.warningBg }}>
+                    <View style={styles.bannerRow}>
+                        <View style={styles.bannerCopy}>
+                            <Text style={[styles.bannerTitle, { color: colors.warningText }]}>Verify Your Email</Text>
+                            <Text style={[styles.bannerText, { color: colors.warningText }]}>Add another layer of security to your account.</Text>
                         </View>
-                        <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>Full Name</Text>
-                            <Text style={styles.infoValue}>{userData.name}</Text>
-                        </View>
+                        <AppButton onPress={handleSendVerificationEmail} loading={verificationSending}>
+                            Send
+                        </AppButton>
                     </View>
+                </AppCard>
+            ) : null}
 
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <View style={styles.iconBox}>
-                            <Mail size={20} color="#4caf50" />
+            <AppCard>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Information</Text>
+                <InfoRow icon={<User size={18} color={colors.primary} />} label="Full Name" value={userData.name} colors={colors} />
+                <Divider color={colors.divider} />
+                <InfoRow
+                    icon={<Mail size={18} color={colors.primary} />}
+                    label="Email"
+                    value={userData.email}
+                    colors={colors}
+                    badge={userData.emailVerified ? (
+                        <View style={[styles.verifiedBadge, { backgroundColor: colors.success }]}>
+                            <Check size={12} color="#fff" />
+                            <Text style={styles.verifiedText}>Verified</Text>
                         </View>
-                        <View style={[styles.infoContent, styles.emailRow]}>
-                            <View style={styles.emailLabelContainer}>
-                                <Text style={styles.infoLabel}>Email</Text>
-                                {userData.emailVerified && (
-                                    <View style={styles.verifiedBadge}>
-                                        <Check size={12} color="#fff" />
-                                        <Text style={styles.verifiedText}>Verified</Text>
-                                    </View>
-                                )}
-                            </View>
-                            <Text style={styles.infoValue}>{userData.email}</Text>
-                        </View>
-                    </View>
+                    ) : null}
+                />
+                <Divider color={colors.divider} />
+                <InfoRow icon={<Phone size={18} color={colors.primary} />} label="Phone" value={userData.phone} colors={colors} />
+            </AppCard>
 
-                    <View style={styles.divider} />
+            <AppCard>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Settings</Text>
+                <SettingItem label="Edit Profile" onPress={() => navigation.navigate('EditProfile')} colors={colors} />
+                <SettingItem label="Change Password" onPress={() => navigation.navigate('ChangePassword')} colors={colors} />
+                <SettingItem label="Notifications" onPress={() => navigation.navigate('NotificationSettings')} colors={colors} />
+                <SettingItem label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} colors={colors} />
+                <SettingItem label="Help & Support" onPress={() => navigation.navigate('HelpSupport')} colors={colors} />
+            </AppCard>
 
-                    <View style={styles.infoRow}>
-                        <View style={styles.iconBox}>
-                            <Phone size={20} color="#4caf50" />
-                        </View>
-                        <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>Phone</Text>
-                            <Text style={styles.infoValue}>{userData.phone}</Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
-
-            {/* Settings */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Settings</Text>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('EditProfile')}>
-                    <Text style={styles.settingText}>Edit Profile</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('ChangePassword')}>
-                    <Text style={styles.settingText}>Change Password</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('NotificationSettings')}>
-                    <Text style={styles.settingText}>Notifications</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
-                    <Text style={styles.settingText}>Privacy Policy</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-
-                <Pressable style={styles.settingItem} onPress={() => navigation.navigate('HelpSupport')}>
-                    <Text style={styles.settingText}>Help & Support</Text>
-                    <ChevronRight size={20} color="#9ca3af" />
-                </Pressable>
-            </View>
-
-            {/* Logout Button */}
-            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                <LogOut size={20} color="#ef4444" />
-                <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
-
-            <View style={styles.footer} />
-        </ScrollView>
+            <AppButton variant="secondary" onPress={handleLogout}>
+                Logout
+            </AppButton>
+        </Screen>
     );
 }
 
+function InfoRow({
+    icon,
+    label,
+    value,
+    colors,
+    badge,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    colors: {
+        primary: string;
+        chip: string;
+        text: string;
+        textSoft: string;
+    };
+    badge?: React.ReactNode;
+}) {
+    return (
+        <View style={styles.infoRow}>
+            <View style={[styles.iconBox, { backgroundColor: colors.chip }]}>{icon}</View>
+            <View style={styles.infoContent}>
+                <View style={styles.infoHeader}>
+                    <Text style={[styles.infoLabel, { color: colors.textSoft }]}>{label}</Text>
+                    {badge}
+                </View>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
+            </View>
+        </View>
+    );
+}
+
+function SettingItem({
+    label,
+    onPress,
+    colors,
+}: {
+    label: string;
+    onPress: () => void;
+    colors: {
+        text: string;
+        textSoft: string;
+        divider: string;
+    };
+}) {
+    return (
+        <Pressable style={({ pressed }) => [styles.settingItem, { borderBottomColor: colors.divider }, pressed && styles.pressed]} onPress={onPress}>
+            <Text style={[styles.settingText, { color: colors.text }]}>{label}</Text>
+            <ChevronRight size={18} color={colors.textSoft} />
+        </Pressable>
+    );
+}
+
+function Divider({ color }: { color: string }) {
+    return <View style={[styles.divider, { backgroundColor: color }]} />;
+}
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
     centered: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
     loadingText: {
         marginTop: 12,
         fontSize: 16,
-        color: '#6b7280',
     },
-    header: {
-        backgroundColor: '#4caf50',
-        paddingTop: 50,
-        paddingBottom: 30,
-        paddingHorizontal: 20,
-    },
-    headerNav: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    editButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        borderWidth: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    avatarContainer: {
+    pressed: {
+        opacity: 0.84,
+    },
+    hero: {
+        borderWidth: 1,
+        borderRadius: 24,
+        padding: 24,
         alignItems: 'center',
+        marginBottom: 16,
     },
     avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        width: 84,
+        height: 84,
+        borderRadius: 42,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
     },
     name: {
         fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 4,
+        fontWeight: '800',
     },
     email: {
+        marginTop: 6,
         fontSize: 14,
-        color: '#e8f5e9',
     },
-    reminderBanner: {
-        marginHorizontal: 20,
-        marginTop: 16,
-        marginBottom: 12,
-        backgroundColor: '#fef3c7',
-        borderRadius: 12,
-        padding: 16,
+    bannerRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        borderLeftWidth: 4,
-        borderLeftColor: '#f59e0b',
     },
-    reminderContent: {
+    bannerCopy: {
         flex: 1,
+        marginRight: 12,
     },
-    reminderTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#92400e',
+    bannerTitle: {
+        fontSize: 15,
+        fontWeight: '700',
         marginBottom: 4,
     },
-    reminderText: {
-        fontSize: 12,
-        color: '#b45309',
-    },
-    reminderBtn: {
-        backgroundColor: '#f59e0b',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 6,
-        marginLeft: 12,
-    },
-    reminderBtnText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    section: {
-        padding: 20,
+    bannerText: {
+        fontSize: 13,
+        lineHeight: 18,
     },
     sectionTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#374151',
+        fontWeight: '700',
         marginBottom: 12,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-    },
-    emailRow: {
-        flex: 1,
+        paddingVertical: 10,
     },
     iconBox: {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: '#f0fdf4',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -329,75 +284,45 @@ const styles = StyleSheet.create({
     infoContent: {
         flex: 1,
     },
-    emailLabelContainer: {
+    infoHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 8,
+        marginBottom: 4,
     },
     infoLabel: {
         fontSize: 12,
-        color: '#6b7280',
-        marginBottom: 2,
+        fontWeight: '600',
+    },
+    infoValue: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    divider: {
+        height: 1,
     },
     verifiedBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#22c55e',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
         gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 999,
     },
     verifiedText: {
-        fontSize: 10,
-        fontWeight: '600',
         color: '#fff',
-    },
-    infoValue: {
-        fontSize: 16,
-        color: '#1f2937',
-        fontWeight: '500',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#f3f4f6',
+        fontSize: 10,
+        fontWeight: '700',
     },
     settingItem: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
     },
     settingText: {
-        fontSize: 16,
-        color: '#1f2937',
-    },
-    settingSubtext: {
-        fontSize: 12,
-        color: '#6b7280',
-        marginTop: 4,
-    },
-    logoutBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fff',
-        marginHorizontal: 20,
-        padding: 16,
-        borderRadius: 12,
-        gap: 8,
-        borderWidth: 1,
-        borderColor: '#fee2e2',
-    },
-    logoutText: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
-        color: '#ef4444',
-    },
-    footer: {
-        height: 40,
     },
 });

@@ -1,19 +1,18 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native';
-import { ShoppingCart, LogIn } from 'lucide-react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { LogIn, ShoppingCart } from 'lucide-react-native';
+import AppButton from '../components/ui/AppButton';
+import AppCard from '../components/ui/AppCard';
+import AppInput from '../components/ui/AppInput';
+import Screen from '../components/ui/Screen';
+import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }: any) {
   const { login, guestLogin } = useAuth();
+  const { colors, isDark } = useAppTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,166 +53,130 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-        {/* Branding */}
-        <View style={styles.header}>
-          <View style={styles.logo}>
-            <ShoppingCart size={32} color="#fff" />
-          </View>
-          <Text style={styles.appName}>Billify</Text>
-          <Text style={styles.subtitle}>Welcome Back</Text>
+    <Screen scrollable contentStyle={styles.screenContent}>
+      <View style={styles.topBar}>
+        <View style={styles.topSpacer} />
+        <ThemeToggleButton />
+      </View>
+
+      <LinearGradient
+        colors={isDark ? ['#052e16', '#166534'] : ['#dcfce7', '#f0fdf4']}
+        style={[styles.hero, { borderColor: colors.border }]}
+      >
+        <View style={[styles.logo, { backgroundColor: colors.primary }]}>
+          <ShoppingCart size={32} color="#fff" />
+        </View>
+        <Text style={[styles.appName, { color: colors.text }]}>Billify</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Modern self-checkout with faster login, clearer spacing, and a polished theme-aware UI.</Text>
+      </LinearGradient>
+
+      <AppCard>
+        <AppInput
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={(value) => {
+            setEmail(value);
+            setError('');
+          }}
+          style={styles.input}
+        />
+
+        <AppInput
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            setError('');
+          }}
+          style={styles.input}
+        />
+
+        {error ? <Text style={[styles.error, { backgroundColor: colors.warningBg, color: colors.warningText }]}>{error}</Text> : null}
+
+        <AppButton onPress={handleLogin} loading={loading}>Login</AppButton>
+
+        <View style={styles.divider}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
+          <Text style={[styles.dividerText, { color: colors.textSoft }]}>OR</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <TextInput
-            placeholder="Email"
-            style={styles.input}
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              setError('');
-            }}
-          />
+        <AppButton onPress={handleGuestLogin} loading={guestLoading} variant="secondary">
+          Continue as Guest
+        </AppButton>
 
-          <TextInput
-            placeholder="Password"
-            style={styles.input}
-            secureTextEntry
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setError('');
-            }}
-          />
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </Pressable>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
+        {!guestLoading ? (
+          <View style={styles.guestHintRow}>
+            <LogIn size={16} color={colors.primary} />
+            <Text style={[styles.guestHint, { color: colors.textMuted }]}>Browse products, scan items, and preview checkout without registering.</Text>
           </View>
+        ) : null}
+      </AppCard>
 
-          {/* Guest Login Button */}
-          <Pressable
-            style={[styles.guestButton, guestLoading && styles.guestButtonDisabled]}
-            onPress={handleGuestLogin}
-            disabled={guestLoading}
-          >
-            {guestLoading ? (
-              <ActivityIndicator color="#4caf50" />
-            ) : (
-              <>
-                <LogIn size={18} color="#4caf50" />
-                <Text style={styles.guestButtonText}>Continue as Guest</Text>
-              </>
-            )}
-          </Pressable>
-        </View>
-
-        {/* Switch */}
-        <Text style={styles.switchText}>
-          Don't have an account?{' '}
-          <Text
-            style={styles.link}
-            onPress={() => navigation.navigate('Signup')}
-          >
-            Sign Up
-          </Text>
+      <Text style={[styles.switchText, { color: colors.textMuted }]}> 
+        Don't have an account?{' '}
+        <Text style={[styles.link, { color: colors.primary }]} onPress={() => navigation.navigate('Signup')}>
+          Sign Up
         </Text>
+      </Text>
 
-        {/* Guest Mode Info */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>Guest Mode</Text>
-          <Text style={styles.infoText}>
-            Browse and scan items, manage cart, and view bills without creating an account.
-          </Text>
-        </View>
-      </ScrollView>
-    </View>
+      <AppCard style={{ backgroundColor: colors.cardAlt }}>
+        <Text style={[styles.infoTitle, { color: colors.text }]}>Guest Mode</Text>
+        <Text style={[styles.infoText, { color: colors.textMuted }]}>Browse the store, manage your cart, and review your bills before you decide to create an account.</Text>
+      </AppCard>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+  screenContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
-  header: {
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  topSpacer: {
+    width: 44,
+  },
+  hero: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   logo: {
-    backgroundColor: '#4caf50',
     width: 72,
     height: 72,
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   appName: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: '800',
   },
   subtitle: {
     fontSize: 14,
-    color: '#6b7280',
     marginTop: 8,
-  },
-  form: {
-    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   input: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 12,
     marginBottom: 12,
-    fontSize: 14,
-    color: '#1f2937',
   },
   error: {
-    backgroundColor: '#fee2e2',
-    color: '#b91c1c',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 12,
     fontSize: 13,
-  },
-  button: {
-    backgroundColor: '#4caf50',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
   },
   divider: {
     flexDirection: 'row',
@@ -223,60 +186,38 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#d1d5db',
   },
   dividerText: {
     marginHorizontal: 12,
-    color: '#9ca3af',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '700',
   },
-  guestButton: {
-    backgroundColor: '#f0fdf4',
-    borderWidth: 2,
-    borderColor: '#4caf50',
-    paddingVertical: 12,
-    borderRadius: 12,
+  guestHintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    marginTop: 12,
   },
-  guestButtonDisabled: {
-    opacity: 0.6,
-  },
-  guestButtonText: {
-    color: '#4caf50',
-    fontWeight: '600',
-    fontSize: 14,
+  guestHint: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
   switchText: {
     textAlign: 'center',
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 16,
   },
   link: {
-    color: '#4caf50',
-    fontWeight: '600',
-  },
-  infoBox: {
-    backgroundColor: '#ecfdf5',
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
+    fontWeight: '700',
   },
   infoTitle: {
-    color: '#059669',
-    fontWeight: '600',
-    fontSize: 13,
-    marginBottom: 4,
+    fontWeight: '700',
+    fontSize: 15,
+    marginBottom: 6,
   },
   infoText: {
-    color: '#047857',
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
   },
 });

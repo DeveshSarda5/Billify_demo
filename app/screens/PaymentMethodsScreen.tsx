@@ -2,71 +2,92 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ChevronRight, CreditCard, Smartphone } from 'lucide-react-native';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import Screen from '../components/ui/Screen';
+import { useAppTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethods'>;
 
 export default function PaymentMethodsScreen({ navigation }: Props) {
+  const { colors } = useAppTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Payment Methods</Text>
+    <Screen>
+      <AppHeader
+        title="Payment Methods"
+        subtitle="Manage your saved UPI handles and cards in one place."
+        onBack={() => navigation.goBack()}
+      />
 
       <Pressable
-        style={styles.methodCard}
         onPress={() => navigation.navigate('ManageUPI')}
       >
-        <View style={styles.row}>
-          <Smartphone size={24} color="#4caf50" style={{ marginRight: 12 }} />
-          <Text style={styles.methodText}>Manage UPI IDs</Text>
-        </View>
-        <ChevronRight size={20} color="#9ca3af" />
+        <AppCard style={styles.methodCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: colors.chip }]}>
+              <Smartphone size={24} color={colors.primary} />
+            </View>
+            <View style={styles.copy}>
+              <Text style={[styles.methodText, { color: colors.text }]}>Manage UPI IDs</Text>
+              <Text style={[styles.methodSubtitle, { color: colors.textMuted }]}>Add or remove your preferred UPI accounts for faster checkout.</Text>
+            </View>
+          </View>
+          <ChevronRight size={20} color={colors.textSoft} />
+        </AppCard>
       </Pressable>
 
       <Pressable
-        style={styles.methodCard}
         onPress={() => navigation.navigate('ManageCards')}
       >
-        <View style={styles.row}>
-          <CreditCard size={24} color="#2196f3" style={{ marginRight: 12 }} />
-          <Text style={styles.methodText}>Manage Debit / Credit Cards</Text>
-        </View>
-        <ChevronRight size={20} color="#9ca3af" />
+        <AppCard style={styles.methodCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: colors.chip }]}>
+              <CreditCard size={24} color={colors.primary} />
+            </View>
+            <View style={styles.copy}>
+              <Text style={[styles.methodText, { color: colors.text }]}>Manage Debit / Credit Cards</Text>
+              <Text style={[styles.methodSubtitle, { color: colors.textMuted }]}>Keep saved cards organized with a cleaner, more consistent wallet view.</Text>
+            </View>
+          </View>
+          <ChevronRight size={20} color={colors.textSoft} />
+        </AppCard>
       </Pressable>
 
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f9fafb',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
   methodCard: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 14,
-    marginBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  iconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  copy: {
+    flex: 1,
   },
   methodText: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1f2937',
+    fontWeight: '700',
+  },
+  methodSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

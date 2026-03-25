@@ -1,10 +1,15 @@
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { useEffect, useState } from 'react';
-import { billsAPI, BillResponse } from '../services/api';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Trash2 } from 'lucide-react-native';
+import AppButton from '../components/ui/AppButton';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import Screen from '../components/ui/Screen';
 import LocationHeader from '../components/LocationHeader';
+import { useAppTheme } from '../context/ThemeContext';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { billsAPI, BillResponse } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PreviousBills'>;
 
@@ -16,6 +21,7 @@ type SortType = 'date' | 'price';
 type SortOrder = 'asc' | 'desc';
 
 export default function PreviousBillsScreen({ navigation }: Props) {
+  const { colors } = useAppTheme();
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,12 +36,12 @@ export default function PreviousBillsScreen({ navigation }: Props) {
     try {
       setLoading(true);
       const data = await billsAPI.getMyBills();
-      // Ensure _id is set
       const billsWithId = data.map((bill: any) => ({
         ...bill,
         _id: bill._id || bill.id,
       }));
       setBills(billsWithId);
+      setError('');
     } catch (err: any) {
       setError(err.message || 'Failed to load bills');
     } finally {
@@ -44,19 +50,13 @@ export default function PreviousBillsScreen({ navigation }: Props) {
   };
 
   const getSortedBills = () => {
-    const sorted = [...bills].sort((a, b) => {
-      let compareValue = 0;
-      
-      if (sortType === 'price') {
-        compareValue = a.totalAmount - b.totalAmount;
-      } else {
-        compareValue = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      
+    return [...bills].sort((a, b) => {
+      const compareValue = sortType === 'price'
+        ? a.totalAmount - b.totalAmount
+        : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
       return sortOrder === 'asc' ? compareValue : -compareValue;
     });
-    
-    return sorted;
   };
 
   const toggleSort = (newSortType: SortType) => {
@@ -69,25 +69,21 @@ export default function PreviousBillsScreen({ navigation }: Props) {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      'Delete Bill',
-      'This bill will be deleted. Do you want to proceed?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await billsAPI.deleteBill(id);
-              setBills(prev => prev.filter(b => b._id !== id));
-            } catch (err: any) {
-              Alert.alert('Error', 'Failed to delete bill');
-            }
+    Alert.alert('Delete Bill', 'This bill will be deleted. Do you want to proceed?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await billsAPI.deleteBill(id);
+            setBills((prev) => prev.filter((bill) => bill._id !== id));
+          } catch {
+            Alert.alert('Error', 'Failed to delete bill');
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   const formatDate = (dateString: string) => {
@@ -97,136 +93,124 @@ export default function PreviousBillsScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#4caf50" />
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Pressable style={styles.retryBtn} onPress={loadBills}>
-          <Text style={styles.retryText}>Retry</Text>
-        </Pressable>
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+          <AppButton onPress={loadBills}>Retry</AppButton>
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LocationHeader />
-      <Text style={styles.title}>Previous Bills</Text>
-
-      {/* Sort Controls */}
-      <View style={styles.sortControls}>
-        <Pressable
-          style={[styles.sortBtn, sortType === 'date' && styles.activeSortBtn]}
-          onPress={() => toggleSort('date')}
-        >
-          <Text style={[styles.sortBtnText, sortType === 'date' && styles.activeSortBtnText]}>
-            Date {sortType === 'date' && (sortOrder === 'asc' ? '\u2191' : '\u2193')}
-          </Text>
-        </Pressable>
-        
-        <Pressable
-          style={[styles.sortBtn, sortType === 'price' && styles.activeSortBtn]}
-          onPress={() => toggleSort('price')}
-        >
-          <Text style={[styles.sortBtnText, sortType === 'price' && styles.activeSortBtnText]}>
-            ₹ Price {sortType === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </Text>
-        </Pressable>
+    <Screen padded={false}>
+      <View style={styles.headerWrap}>
+        <AppHeader title="Previous Bills" subtitle="Review, sort, and reopen past purchases." onBack={() => navigation.goBack()} />
       </View>
 
-      {bills.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>No bills yet</Text>
+      <LocationHeader />
+
+      <View style={styles.content}>
+        <View style={styles.sortControls}>
+          <Pressable style={[styles.sortBtn, { backgroundColor: sortType === 'date' ? colors.primary : colors.cardAlt }]} onPress={() => toggleSort('date')}>
+            <Text style={[styles.sortBtnText, { color: sortType === 'date' ? '#fff' : colors.textMuted }]}>Date {sortType === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</Text>
+          </Pressable>
+          <Pressable style={[styles.sortBtn, { backgroundColor: sortType === 'price' ? colors.primary : colors.cardAlt }]} onPress={() => toggleSort('price')}>
+            <Text style={[styles.sortBtnText, { color: sortType === 'price' ? '#fff' : colors.textMuted }]}>₹ Price {sortType === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}</Text>
+          </Pressable>
         </View>
-      ) : (
-        <FlatList
-          data={getSortedBills()}
-          keyExtractor={(item) => item._id}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => navigation.navigate('BillDetails', { bill: item })}>
-              <View style={styles.billCard}>
-                {/* Header with Bill ID and Date */}
-                <View style={styles.billHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.billId}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
-                    <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
-                    <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
-                      {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                    </Text>
-                  </View>
-                  <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
-                    <Trash2 size={20} color="#ef4444" />
-                  </Pressable>
-                </View>
 
-                {/* Items Breakdown */}
-                <View style={styles.itemsContainer}>
-                  <View style={styles.itemHeader}>
-                    <Text style={[styles.itemText, styles.itemName]}>Item</Text>
-                    <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
-                    <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
-                  </View>
-                  {item.items && item.items.map((lineItem, idx) => (
-                    <View key={idx} style={styles.itemRow}>
-                      <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{lineItem.name}</Text>
-                      <Text style={[styles.itemValue, styles.itemQty]}>{lineItem.quantity}</Text>
-                      <Text style={[styles.itemValue, styles.itemPrice]}>₹{(lineItem.price * lineItem.quantity).toFixed(2)}</Text>
+        {bills.length === 0 ? (
+          <View style={styles.centered}>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No bills yet</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={getSortedBills()}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <Pressable onPress={() => navigation.navigate('BillDetails', { bill: item })}>
+                <AppCard>
+                  <View style={[styles.billHeader, { borderBottomColor: colors.border }]}> 
+                    <View style={styles.flexItem}>
+                      <Text style={[styles.billId, { color: colors.text }]}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
+                      <Text style={[styles.date, { color: colors.textMuted }]}>{formatDate(item.createdAt)}</Text>
+                      <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? colors.success : colors.warning }]}>
+                        {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                      </Text>
                     </View>
-                  ))}
-                </View>
-
-                {/* Totals */}
-                <View style={styles.totalsContainer}>
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Subtotal:</Text>
-                    <Text style={styles.totalValue}>₹{(item.subtotal || item.totalAmount).toFixed(2)}</Text>
+                    <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
+                      <Trash2 size={20} color={colors.danger} />
+                    </Pressable>
                   </View>
-                  {item.tax !== undefined && item.tax > 0 && (
+
+                  <View style={[styles.itemsContainer, { borderBottomColor: colors.border }]}> 
+                    <View style={styles.itemHeader}>
+                      <Text style={[styles.itemText, styles.itemName, { color: colors.textMuted }]}>Item</Text>
+                      <Text style={[styles.itemText, styles.itemQty, { color: colors.textMuted }]}>Qty</Text>
+                      <Text style={[styles.itemText, styles.itemPrice, { color: colors.textMuted }]}>Price</Text>
+                    </View>
+                    {item.items?.map((lineItem, idx) => (
+                      <View key={idx} style={styles.itemRow}>
+                        <Text style={[styles.itemValue, styles.itemName, { color: colors.text }]} numberOfLines={1}>{lineItem.name}</Text>
+                        <Text style={[styles.itemValue, styles.itemQty, { color: colors.text }]}>{lineItem.quantity}</Text>
+                        <Text style={[styles.itemValue, styles.itemPrice, { color: colors.text }]}>₹{(lineItem.price * lineItem.quantity).toFixed(2)}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.totalsContainer}>
                     <View style={styles.totalRow}>
-                      <Text style={styles.totalLabel}>Tax (GST):</Text>
-                      <Text style={styles.totalValue}>₹{item.tax.toFixed(2)}</Text>
+                      <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Subtotal:</Text>
+                      <Text style={[styles.totalValue, { color: colors.text }]}>₹{(item.subtotal || item.totalAmount).toFixed(2)}</Text>
                     </View>
-                  )}
-                  <View style={[styles.totalRow, styles.grandTotalRow]}>
-                    <Text style={styles.grandTotalLabel}>Total Amount:</Text>
-                    <Text style={styles.grandTotalValue}>₹{item.totalAmount.toFixed(2)}</Text>
+                    {item.tax !== undefined && item.tax > 0 ? (
+                      <View style={styles.totalRow}>
+                        <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Tax (GST):</Text>
+                        <Text style={[styles.totalValue, { color: colors.text }]}>₹{item.tax.toFixed(2)}</Text>
+                      </View>
+                    ) : null}
+                    <View style={[styles.totalRow, styles.grandTotalRow]}>
+                      <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total Amount:</Text>
+                      <Text style={[styles.grandTotalValue, { color: colors.primary }]}>₹{item.totalAmount.toFixed(2)}</Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Exit Pass Button (if paid) */}
-                {item.paymentStatus === 'paid' && item.exitPass && (
-                  <Pressable
-                    style={styles.exitPassBtn}
-                    onPress={() => navigation.navigate('BillDetails', { bill: item })}
-                  >
-                    <Text style={styles.exitPassBtnText}>View Exit Pass</Text>
-                  </Pressable>
-                )}
-              </View>
-            </Pressable>
-          )}
-        />
-      )}
-    </View>
+                  {item.paymentStatus === 'paid' && item.exitPass ? (
+                    <View style={[styles.exitPassBtn, { backgroundColor: colors.chip }]}> 
+                      <Text style={[styles.exitPassBtnText, { color: colors.primary }]}>View Exit Pass in details</Text>
+                    </View>
+                  ) : null}
+                </AppCard>
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f9fafb',
+  headerWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 12,
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   sortControls: {
     flexDirection: 'row',
@@ -235,68 +219,44 @@ const styles = StyleSheet.create({
   },
   sortBtn: {
     flex: 1,
-    backgroundColor: '#e5e7eb',
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  activeSortBtn: {
-    backgroundColor: '#4caf50',
-  },
   sortBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
-  },
-  activeSortBtnText: {
-    color: '#fff',
-  },
-  billCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
   billHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingBottom: 12,
+  },
+  flexItem: {
+    flex: 1,
   },
   billId: {
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontSize: 16,
-    color: '#1f2937',
   },
   date: {
-    color: '#6b7280',
     fontSize: 12,
     marginTop: 4,
   },
   status: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 4,
   },
   deleteBtn: {
     padding: 8,
   },
   itemsContainer: {
-    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   itemHeader: {
     flexDirection: 'row',
@@ -309,17 +269,15 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
   },
   itemValue: {
     fontSize: 13,
-    color: '#1f2937',
   },
   itemName: {
     flex: 1,
   },
   itemQty: {
-    width: 50,
+    width: 45,
     textAlign: 'center',
   },
   itemPrice: {
@@ -327,78 +285,53 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   totalsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  grandTotalRow: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    marginBottom: 0,
+    marginBottom: 4,
   },
   totalLabel: {
     fontSize: 13,
-    color: '#6b7280',
   },
   totalValue: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#1f2937',
+    fontWeight: '600',
+  },
+  grandTotalRow: {
+    marginTop: 8,
   },
   grandTotalLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 15,
+    fontWeight: '700',
   },
   grandTotalValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4caf50',
+    fontSize: 16,
+    fontWeight: '800',
   },
   exitPassBtn: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 16,
+    marginTop: 12,
     paddingVertical: 12,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderRadius: 12,
   },
   exitPassBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: '700',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: '#4caf50',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   emptyText: {
-    color: '#6b7280',
     fontSize: 16,
+  },
+  errorText: {
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 120,
   },
 });

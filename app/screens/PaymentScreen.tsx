@@ -1,11 +1,16 @@
-import { View, Text, StyleSheet, Pressable, Modal, Alert, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import AppButton from '../components/ui/AppButton';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import Screen from '../components/ui/Screen';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useAppTheme } from '../context/ThemeContext';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { billsAPI } from '../services/api';
 import { getReadableRazorpayError, openRazorpayWebCheckout } from '../services/razorpayPayment';
-import { useAuth } from '../context/AuthContext';
 import LocationHeader from '../components/LocationHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
@@ -19,6 +24,7 @@ export default function PaymentScreen({ route, navigation }: Props) {
   const total = route.params?.total ?? 0;
   const { items, clearCart } = useCart();
   const { user } = useAuth();
+  const { colors } = useAppTheme();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
@@ -76,169 +82,128 @@ export default function PaymentScreen({ route, navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen padded={false}>
+      <View style={styles.inner}>
+        <AppHeader
+          title="Payment"
+          subtitle="Review the total and choose how you want to complete this purchase."
+          onBack={() => navigation.goBack()}
+        />
+      </View>
       <LocationHeader />
-      <Text style={styles.title}>Payment</Text>
+      <View style={styles.content}>
+        <AppCard>
+          <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Amount to Pay</Text>
+          <Text style={[styles.amount, { color: colors.text }]}>₹{total}</Text>
+          <Text style={[styles.testHint, { color: colors.warningText, backgroundColor: colors.warningBg }]}>
+            Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234. Make sure EXPO_PUBLIC_API_BASE_URL points to your active HTTPS ngrok /api URL.
+          </Text>
+        </AppCard>
 
-      {/* Amount Card */}
-      <View style={styles.amountCard}>
-        <Text style={styles.amountLabel}>Amount to Pay</Text>
-        <Text style={styles.amount}>₹{total}</Text>
-        <Text style={styles.testHint}>
-          Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234. Make sure EXPO_PUBLIC_API_BASE_URL points to your active HTTPS ngrok /api URL.
-        </Text>
+        <Pressable onPress={() => setShowModal(true)}>
+          <AppCard>
+            <Text style={[styles.methodTitle, { color: colors.text }]}>Payment Method</Text>
+            <Text style={[styles.methodValue, { color: selectedMethod ? colors.textMuted : colors.textSoft }]}>
+              {selectedMethod
+                ? PAYMENT_OPTIONS.find((option) => option.id === selectedMethod)?.label
+                : 'Select Payment Method'}
+            </Text>
+          </AppCard>
+        </Pressable>
+
+        <AppButton onPress={handlePayment} disabled={!selectedMethod || processing} loading={processing}>
+          {selectedMethod === 'cod' ? 'Generate Bill' : `Pay ₹${total}`}
+        </AppButton>
       </View>
 
-      {/* Payment Method */}
-      <Pressable style={styles.methodCard} onPress={() => setShowModal(true)}>
-        <Text style={styles.methodTitle}>Payment Method</Text>
-        <Text style={styles.methodValue}>
-          {selectedMethod
-            ? PAYMENT_OPTIONS.find(o => o.id === selectedMethod)?.label
-            : 'Select Payment Method'}
-        </Text>
-      </Pressable>
-
-      {/* Pay Button */}
-      <Pressable
-        style={[
-          styles.payBtn,
-          (!selectedMethod || processing) && { opacity: 0.5 },
-        ]}
-        disabled={!selectedMethod || processing}
-        onPress={handlePayment}
-      >
-        {processing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.payText}>
-            {selectedMethod === 'cod' ? 'Generate Bill' : `Pay ₹${total}`}
-          </Text>
-        )}
-      </Pressable>
-
-      {/* ---------- METHOD MODAL ---------- */}
       <Modal visible={showModal} animationType="slide" transparent>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Choose Payment Method</Text>
+        <View style={[styles.modalBackdrop, { backgroundColor: colors.overlay }]}> 
+          <View style={[styles.modal, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Payment Method</Text>
 
-            {PAYMENT_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt.id}
-                style={styles.upiOption}
-                onPress={() => {
-                  setSelectedMethod(opt.id);
-                  setShowModal(false);
-                }}
-              >
-                <Text style={styles.upiText}>{opt.label}</Text>
-              </Pressable>
-            ))}
+            {PAYMENT_OPTIONS.map((opt) => {
+              const active = selectedMethod === opt.id;
+              return (
+                <Pressable
+                  key={opt.id}
+                  style={[styles.option, { borderColor: colors.border, backgroundColor: active ? colors.chip : colors.cardAlt }]}
+                  onPress={() => {
+                    setSelectedMethod(opt.id);
+                    setShowModal(false);
+                  }}
+                >
+                  <Text style={[styles.optionText, { color: colors.text }]}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
 
-            <Pressable
-              style={styles.cancelBtn}
-              onPress={() => setShowModal(false)}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
+            <AppButton variant="secondary" onPress={() => setShowModal(false)}>
+              Cancel
+            </AppButton>
           </View>
         </View>
       </Modal>
-
-    </View>
+    </Screen>
   );
 }
 
 /* ---------- Styles ---------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f9fafb',
+  inner: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  amountCard: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 100,
   },
   amountLabel: {
-    color: '#6b7280',
+    fontSize: 14,
   },
   amount: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginTop: 6,
   },
   testHint: {
     marginTop: 12,
     fontSize: 12,
     lineHeight: 18,
-    color: '#92400e',
-    backgroundColor: '#fffbeb',
     borderRadius: 10,
     padding: 10,
   },
-  methodCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 30,
-  },
   methodTitle: {
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 15,
   },
   methodValue: {
-    color: '#6b7280',
     marginTop: 4,
+    fontSize: 13,
   },
-  payBtn: {
-    backgroundColor: '#22c55e',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  payText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  /* Modal */
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   modal: {
-    backgroundColor: '#fff',
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderWidth: 1,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 14,
   },
-  upiOption: {
+  option: {
     paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
   },
-  upiText: {
+  optionText: {
     fontSize: 16,
-  },
-  cancelBtn: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#ef4444',
-    fontWeight: '600',
   },
 });

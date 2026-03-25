@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { RefreshCw, MapPin } from 'lucide-react-native';
 import { useLocation } from '../context/LocationContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function LocationHeader() {
   const { currentStore, locationStatus, refreshLocation } = useLocation();
+  const { colors } = useAppTheme();
 
   const isDetecting = locationStatus === 'detecting';
 
@@ -25,7 +27,7 @@ export default function LocationHeader() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderBottomColor: colors.divider }] }>
       <View style={styles.content}>
         <MapPin size={16} color={statusColor} style={styles.icon} />
         <Text
@@ -39,13 +41,14 @@ export default function LocationHeader() {
           disabled={isDetecting}
           style={({ pressed }) => [
             styles.refreshBtn,
+            { backgroundColor: colors.background, borderColor: colors.border },
             pressed && styles.pressed,
             isDetecting && styles.disabled,
           ]}
         >
           <RefreshCw
             size={14}
-            color="#666"
+            color={colors.icon}
             style={isDetecting ? styles.spinning : null}
           />
         </Pressable>
@@ -58,9 +61,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#f9fafb',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
   },
   content: {
     flexDirection: 'row',
@@ -77,12 +78,9 @@ const styles = StyleSheet.create({
   refreshBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   pressed: {
-    backgroundColor: '#f3f4f6',
     opacity: 0.7,
   },
   disabled: {

@@ -1,12 +1,19 @@
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
+import { Alert, StyleSheet, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AppButton from '../components/ui/AppButton';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import AppInput from '../components/ui/AppInput';
+import Screen from '../components/ui/Screen';
+import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { authAPI } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChangePassword'>;
 
 export default function ChangePasswordScreen({ navigation }: Props) {
+    const { colors } = useAppTheme();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,9 +33,7 @@ export default function ChangePasswordScreen({ navigation }: Props) {
         setLoading(true);
         try {
             await authAPI.changePassword({ currentPassword, newPassword });
-            Alert.alert('Success', 'Password changed successfully', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            Alert.alert('Success', 'Password changed successfully', [{ text: 'OK', onPress: () => navigation.goBack() }]);
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
@@ -37,82 +42,49 @@ export default function ChangePasswordScreen({ navigation }: Props) {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>Current Password</Text>
-            <TextInput
-                style={styles.input}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                placeholder="Enter current password"
-                secureTextEntry
-            />
+        <Screen scrollable>
+            <AppHeader title="Change Password" subtitle="Update your credentials without affecting any profile data." onBack={() => navigation.goBack()} />
+            <AppCard>
+                <Text style={[styles.label, { color: colors.text }]}>Current Password</Text>
+                <AppInput
+                    style={styles.input}
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                    placeholder="Enter current password"
+                    secureTextEntry
+                />
 
-            <Text style={styles.label}>New Password</Text>
-            <TextInput
-                style={styles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Enter new password"
-                secureTextEntry
-            />
+                <Text style={[styles.label, { color: colors.text }]}>New Password</Text>
+                <AppInput
+                    style={styles.input}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    placeholder="Enter new password"
+                    secureTextEntry
+                />
 
-            <Text style={styles.label}>Confirm New Password</Text>
-            <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm new password"
-                secureTextEntry
-            />
+                <Text style={[styles.label, { color: colors.text }]}>Confirm New Password</Text>
+                <AppInput
+                    style={styles.input}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="Confirm new password"
+                    secureTextEntry
+                />
 
-            <Pressable
-                style={[styles.saveBtn, loading && styles.disabled]}
-                onPress={handleSubmit}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.saveText}>Update Password</Text>
-                )}
-            </Pressable>
-        </View>
+                <AppButton onPress={handleSubmit} loading={loading}>Update Password</AppButton>
+            </AppCard>
+        </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-    },
     label: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
         marginBottom: 8,
-        color: '#374151',
     },
     input: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        padding: 12,
         marginBottom: 20,
-        fontSize: 16,
-    },
-    saveBtn: {
-        backgroundColor: '#4caf50',
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    disabled: {
-        opacity: 0.7,
-    },
-    saveText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
