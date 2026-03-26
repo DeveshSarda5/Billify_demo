@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import LocationHeader from '../components/LocationHeader';
-import RefreshLocationButton from '../components/RefreshLocationButton';
+import { radius } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -32,24 +32,16 @@ export default function DashboardScreen({ navigation }: Props) {
                         <Text style={[styles.title, { color: colors.text }]}>Billify</Text>
                         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Welcome back, {user?.name || 'Guest'}.</Text>
                     </View>
-                </View>
-
-                <View style={styles.headerActions}>
-                    <RefreshLocationButton />
-                    <ThemeToggleButton />
-                    <Pressable
-                        style={({ pressed }) => [styles.headerBtn, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
-                        onPress={() => navigation.navigate('Profile')}
-                    >
-                        <User size={18} color={colors.icon} />
-                    </Pressable>
-                    <Pressable
-                        style={({ pressed }) => [styles.logoutBtn, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
-                        onPress={logout}
-                    >
-                        <LogOut size={18} color={colors.primary} />
-                        <Text style={[styles.logoutText, { color: colors.text }]}>Logout</Text>
-                    </Pressable>
+                    <View style={styles.headerActions}>
+                        <ThemeToggleButton />
+                        <Pressable
+                            style={({ pressed }) => [styles.logoutBtn, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
+                            onPress={logout}
+                        >
+                            <LogOut size={18} color={colors.primary} />
+                            <Text style={[styles.logoutText, { color: colors.text }]}>Logout</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
 
@@ -81,9 +73,9 @@ export default function DashboardScreen({ navigation }: Props) {
                 <View style={styles.grid}>
                     {actions.map(({ title, subtitle, icon: Icon, key }) => (
                         <Pressable key={key} style={styles.gridItem} onPress={() => navigation.navigate(key)}>
-                            <AppCard style={styles.actionCard}>
-                                <View style={[styles.iconBox, { backgroundColor: colors.chip }]}>
-                                    <Icon size={22} color={colors.primary} />
+                            <AppCard style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+                                <View style={[styles.iconBox, getActionIconStyle(key)]}>
+                                    <Icon size={22} color="#ffffff" />
                                 </View>
                                 <Text style={[styles.cardTitle, { color: colors.text }]}>{title}</Text>
                                 <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
@@ -93,13 +85,13 @@ export default function DashboardScreen({ navigation }: Props) {
                 </View>
 
                 <Pressable onPress={() => navigation.navigate('HelpSupport')}>
-                    <AppCard style={styles.helpCard}>
-                        <View style={[styles.iconBox, { backgroundColor: colors.chip, marginBottom: 0 }]}>
-                            <HelpCircle size={22} color={colors.primary} />
+                    <AppCard style={[styles.helpCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+                        <View style={[styles.helpIconBox, { backgroundColor: isDark ? '#6b7280' : '#717b8d' }]}>
+                            <HelpCircle size={22} color="#ffffff" />
                         </View>
                         <View style={styles.helpCopy}>
                             <Text style={[styles.cardTitle, { color: colors.text }]}>Help & Support</Text>
-                            <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>FAQs, support tickets, and issue tracking in one place.</Text>
+                            <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>FAQs, chat with us</Text>
                         </View>
                     </AppCard>
                 </Pressable>
@@ -108,6 +100,21 @@ export default function DashboardScreen({ navigation }: Props) {
             </View>
         </Screen>
     );
+}
+
+function getActionIconStyle(key: (typeof actions)[number]['key']) {
+    switch (key) {
+        case 'PreviousBills':
+            return { backgroundColor: '#3b82f6' };
+        case 'Profile':
+            return { backgroundColor: '#7c3aed' };
+        case 'Offers':
+            return { backgroundColor: '#f97316' };
+        case 'PaymentMethods':
+            return { backgroundColor: '#22c55e' };
+        default:
+            return { backgroundColor: '#4caf50' };
+    }
 }
 
 const styles = StyleSheet.create({
@@ -119,26 +126,16 @@ const styles = StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
     },
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginTop: 14,
-        flexWrap: 'wrap',
-    },
-    headerBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 14,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     logoutBtn: {
         minHeight: 42,
-        borderRadius: 14,
+        borderRadius: radius.md,
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
@@ -164,7 +161,7 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 16,
         paddingTop: 12,
-        paddingBottom: 100,
+        paddingBottom: 36,
     },
     scanCard: {
         marginBottom: 18,
@@ -220,7 +217,10 @@ const styles = StyleSheet.create({
         width: '48%',
     },
     actionCard: {
-        minHeight: 148,
+        minHeight: 134,
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 16,
     },
     iconBox: {
         width: 48,
@@ -242,6 +242,17 @@ const styles = StyleSheet.create({
     helpCard: {
         flexDirection: 'row',
         alignItems: 'center',
+        borderRadius: 20,
+        padding: 16,
+        gap: 14,
+        marginTop: 8,
+    },
+    helpIconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     helpCopy: {
         flex: 1,

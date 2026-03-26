@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { LogIn, ShoppingCart } from 'lucide-react-native';
 import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
@@ -9,6 +8,7 @@ import Screen from '../components/ui/Screen';
 import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { radius } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { login, guestLogin } = useAuth();
@@ -55,22 +55,18 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <Screen scrollable contentStyle={styles.screenContent}>
       <View style={styles.topBar}>
-        <View style={styles.topSpacer} />
         <ThemeToggleButton />
       </View>
 
-      <LinearGradient
-        colors={isDark ? ['#052e16', '#166534'] : ['#dcfce7', '#f0fdf4']}
-        style={[styles.hero, { borderColor: colors.border }]}
-      >
+      <View style={styles.header}>
         <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-          <ShoppingCart size={32} color="#fff" />
+          <ShoppingCart size={30} color="#fff" />
         </View>
         <Text style={[styles.appName, { color: colors.text }]}>Billify</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Modern self-checkout with faster login, clearer spacing, and a polished theme-aware UI.</Text>
-      </LinearGradient>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Welcome back</Text>
+      </View>
 
-      <AppCard>
+      <AppCard style={[styles.formCard, { backgroundColor: colors.card }]}> 
         <AppInput
           placeholder="Email"
           autoCapitalize="none"
@@ -111,7 +107,7 @@ export default function LoginScreen({ navigation }: any) {
         {!guestLoading ? (
           <View style={styles.guestHintRow}>
             <LogIn size={16} color={colors.primary} />
-            <Text style={[styles.guestHint, { color: colors.textMuted }]}>Browse products, scan items, and preview checkout without registering.</Text>
+            <Text style={[styles.guestHint, { color: colors.textMuted }]}>Browse items, scan products, and preview checkout without creating an account.</Text>
           </View>
         ) : null}
       </AppCard>
@@ -123,10 +119,10 @@ export default function LoginScreen({ navigation }: any) {
         </Text>
       </Text>
 
-      <AppCard style={{ backgroundColor: colors.cardAlt }}>
-        <Text style={[styles.infoTitle, { color: colors.text }]}>Guest Mode</Text>
-        <Text style={[styles.infoText, { color: colors.textMuted }]}>Browse the store, manage your cart, and review your bills before you decide to create an account.</Text>
-      </AppCard>
+      <View style={[styles.infoBox, { backgroundColor: colors.cardAlt, borderLeftColor: colors.primaryAlt }]}> 
+        <Text style={[styles.infoTitle, { color: colors.primaryAlt }]}>Guest Mode</Text>
+        <Text style={[styles.infoText, { color: colors.textMuted }]}>Browse the store, manage your cart, and review bills before deciding to sign up.</Text>
+      </View>
     </Screen>
   );
 }
@@ -138,36 +134,32 @@ const styles = StyleSheet.create({
   },
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    justifyContent: 'flex-end',
+    marginBottom: 10,
   },
-  topSpacer: {
-    width: 44,
-  },
-  hero: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 24,
+  header: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   logo: {
     width: 72,
     height: 72,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   appName: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   subtitle: {
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
-    lineHeight: 20,
+  },
+  formCard: {
+    marginBottom: 16,
   },
   input: {
     marginBottom: 12,
@@ -211,13 +203,18 @@ const styles = StyleSheet.create({
   link: {
     fontWeight: '700',
   },
+  infoBox: {
+    borderLeftWidth: 4,
+    padding: 14,
+    borderRadius: radius.md,
+  },
   infoTitle: {
     fontWeight: '700',
-    fontSize: 15,
-    marginBottom: 6,
+    fontSize: 13,
+    marginBottom: 4,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
 });

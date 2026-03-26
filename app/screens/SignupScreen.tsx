@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ShoppingCart } from 'lucide-react-native';
 import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
@@ -10,6 +9,7 @@ import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { authAPI } from '../services/api';
+import { radius } from '../theme';
 
 export default function SignupScreen({ navigation }: any) {
   const { signup, login, setPhoneVerified } = useAuth();
@@ -145,22 +145,18 @@ export default function SignupScreen({ navigation }: any) {
   return (
     <Screen scrollable>
       <View style={styles.topBar}>
-        <View style={styles.topSpacer} />
         <ThemeToggleButton />
       </View>
 
-      <LinearGradient
-        colors={isDark ? ['#052e16', '#166534'] : ['#dcfce7', '#f0fdf4']}
-        style={[styles.header, { borderColor: colors.border }]}
-      >
+      <View style={styles.header}>
         <View style={[styles.logo, { backgroundColor: colors.primary }]}>
           <ShoppingCart size={32} color="#fff" />
         </View>
         <Text style={[styles.appName, { color: colors.text }]}>Billify</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Create your account with verified phone access for secure checkout.</Text>
-      </LinearGradient>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Create account</Text>
+      </View>
 
-      <AppCard>
+      <AppCard style={styles.sectionCard}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>1. Verify Phone Number</Text>
 
         {!phoneVerified ? (
@@ -204,13 +200,13 @@ export default function SignupScreen({ navigation }: any) {
             )}
           </>
         ) : (
-          <View style={[styles.verifiedBadge, { backgroundColor: colors.muted }]}>
+          <View style={[styles.verifiedBadge, { backgroundColor: colors.cardAlt, borderLeftColor: colors.primaryAlt }]}>
             <Text style={[styles.verifiedText, { color: colors.primary }]}>Phone Verified ({phone})</Text>
           </View>
         )}
       </AppCard>
 
-      <AppCard>
+      <AppCard style={styles.sectionCard}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>2. Account Details</Text>
         <AppInput placeholder="Full Name" value={name} onChangeText={(text) => { setName(text); setError(''); }} style={styles.input} />
         <AppInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={(text) => { setEmail(text); setError(''); }} style={styles.input} />
@@ -237,41 +233,37 @@ export default function SignupScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  topSpacer: {
-    width: 44,
+    justifyContent: 'flex-end',
+    marginBottom: 10,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 18,
-    padding: 24,
-    borderRadius: 24,
-    borderWidth: 1,
+    marginBottom: 24,
   },
   logo: {
     width: 72,
     height: 72,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   appName: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   subtitle: {
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
-    lineHeight: 20,
+  },
+  sectionCard: {
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   input: {
     marginBottom: 12,
@@ -290,7 +282,8 @@ const styles = StyleSheet.create({
   },
   verifiedBadge: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radius.md,
+    borderLeftWidth: 4,
   },
   verifiedText: {
     fontWeight: '700',
@@ -304,7 +297,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 6,
     fontSize: 14,
   },
   link: {

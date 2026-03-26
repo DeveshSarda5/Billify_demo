@@ -146,7 +146,7 @@ export default function PreviousBillsScreen({ navigation }: Props) {
                     <View style={styles.flexItem}>
                       <Text style={[styles.billId, { color: colors.text }]}>Bill #{item._id.slice(-6).toUpperCase()}</Text>
                       <Text style={[styles.date, { color: colors.textMuted }]}>{formatDate(item.createdAt)}</Text>
-                      <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? colors.success : colors.warning }]}>
+                      <Text style={[styles.status, { color: item.paymentStatus === 'paid' ? colors.success : colors.warningText }]}>
                         {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                       </Text>
                     </View>

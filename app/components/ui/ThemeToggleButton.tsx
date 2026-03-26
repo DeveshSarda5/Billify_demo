@@ -1,10 +1,21 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Moon, Sun } from 'lucide-react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { radius } from '../../theme';
 
 export default function ThemeToggleButton() {
   const { colors, isDark, toggleTheme } = useAppTheme();
+  const translateX = useRef(new Animated.Value(isDark ? 22 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(translateX, {
+      toValue: isDark ? 22 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [isDark, translateX]);
 
   return (
     <Pressable
@@ -18,8 +29,15 @@ export default function ThemeToggleButton() {
         pressed && styles.pressed,
       ]}
     >
-      <View style={[styles.iconWrap, { backgroundColor: isDark ? colors.primary : colors.cardAlt }]}> 
-        {isDark ? <Moon size={16} color="#ffffff" /> : <Sun size={16} color={colors.primary} />}
+      <View style={[styles.switchTrack, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}> 
+        <Animated.View
+          style={[
+            styles.iconWrap,
+            { backgroundColor: isDark ? colors.primary : '#ffffff', transform: [{ translateX }] },
+          ]}
+        >
+          {isDark ? <Moon size={16} color="#ffffff" /> : <Sun size={16} color={colors.primary} />}
+        </Animated.View>
       </View>
       <Text style={[styles.label, { color: colors.text }]}>{isDark ? 'Dark' : 'Light'}</Text>
     </Pressable>
@@ -36,13 +54,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
+  switchTrack: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
   pressed: {
     opacity: 0.85,
   },
   iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
