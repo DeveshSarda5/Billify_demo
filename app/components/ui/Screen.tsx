@@ -17,7 +17,7 @@ export default function Screen({
   children,
   scrollable = false,
   padded = true,
-  safeEdges = ['top', 'left', 'right'],
+  safeEdges = ['top', 'bottom', 'left', 'right'],
   style,
   contentStyle,
   scrollProps,
@@ -59,5 +59,6 @@ const styles = StyleSheet.create({
   padded: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.screenY,
+    paddingBottom: spacing.screenY,
   },
 });

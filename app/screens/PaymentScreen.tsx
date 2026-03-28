@@ -44,7 +44,11 @@ export default function PaymentScreen({ route, navigation }: Props) {
 
       clearCart();
       Alert.alert('Success', 'Bill generated successfully!');
-      navigation.navigate('ExitPass', { billId });
+      navigation.navigate('ExitPass', {
+        billId,
+        amountPaid: total,
+        issuedAt: new Date().toISOString(),
+      });
     } catch (err: any) {
       Alert.alert('Error', 'Payment successful but bill generation failed. Contact support.');
     }

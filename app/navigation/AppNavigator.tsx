@@ -47,7 +47,7 @@ export type RootStackParamList = {
   Cart: { barcode: string };
   Payment: { total: number };
   PaymentMethods: undefined;
-  ExitPass: { billId?: string };
+  ExitPass: { billId?: string; amountPaid?: number; issuedAt?: string };
   PreviousBills: undefined;
   BillDetails: { bill: any };
   Offers: undefined;

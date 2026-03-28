@@ -1,17 +1,29 @@
-import { View, Text, StyleSheet, Pressable, Alert, Modal } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Easing,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { ShoppingCart, ScanLine, X } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useEffect, useRef, useState } from 'react';
+import { ScanLine, ShoppingCart, X } from 'lucide-react-native';
+import LocationHeader from '../components/LocationHeader';
+import AppCard from '../components/ui/AppCard';
+import AppButton from '../components/ui/AppButton';
+import Screen from '../components/ui/Screen';
+import { findProductByBarcode } from '../constants/storeInventory';
 import { useCart } from '../context/CartContext';
 import { useLocation } from '../context/LocationContext';
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useAppTheme } from '../context/ThemeContext';
 import { productsAPI } from '../services/api';
-import LocationHeader from '../components/LocationHeader';
-import { findProductByBarcode } from '../constants/storeInventory';
+import { radius, shadows, spacing } from '../theme';
 
-/* =======================
-   DEV TEST PRODUCT
-======================= */
 const DEV_PRODUCT = {
   barcode: 'DEV-001',
   name: 'Test Shampoo',
@@ -19,6 +31,7 @@ const DEV_PRODUCT = {
 };
 
 export default function ScanScreen() {
+  const { colors, isDark } = useAppTheme();
   const { items, addItem } = useCart();
   const { currentStore } = useLocation();
   const navigation = useNavigation<any>();
@@ -27,79 +40,80 @@ export default function ScanScreen() {
   const [scanned, setScanned] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [lastScannedItem, setLastScannedItem] = useState<any>(null);
+  const [frameHeight, setFrameHeight] = useState(220);
 
-  /* =======================
-     PERMISSION HANDLING
-  ======================= */
-  if (!permission) return <View />;
+  const scanLineTranslate = useRef(new Animated.Value(0)).current;
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.permission}>
-        <Text style={styles.permissionText}>
-          Camera access is required to scan products
-        </Text>
-        <Pressable style={styles.permissionBtn} onPress={requestPermission}>
-          <Text style={styles.permissionBtnText}>Allow Camera</Text>
-        </Pressable>
-      </View>
+  useEffect(() => {
+    if (!permission?.granted || frameHeight <= 0) {
+      return;
+    }
+
+    scanLineTranslate.setValue(0);
+    const animation = Animated.loop(
+      Animated.timing(scanLineTranslate, {
+        toValue: Math.max(frameHeight - 8, 0),
+        duration: 2200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
     );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [frameHeight, permission?.granted, scanLineTranslate]);
+
+  if (!permission) {
+    return <Screen safeEdges={['top', 'bottom', 'left', 'right']} />;
   }
 
-  /* =======================
-     BARCODE HANDLER
-  ======================= */
   const handleScan = async ({ data }: { data: string }) => {
-    if (scanned) return;
+    if (scanned) {
+      return;
+    }
 
     setScanned(true);
 
     try {
-      // First, try to find product in store-specific inventory
       if (currentStore?.id) {
         const storeProduct = findProductByBarcode(data, currentStore.id);
-        
+
         if (storeProduct) {
-          // Immediately update cart state
           addItem({
             barcode: data,
             name: storeProduct.name,
             price: storeProduct.price,
           });
 
-          // Store for confirmation UI
           setLastScannedItem({
             name: storeProduct.name,
             price: storeProduct.price,
           });
-
           setShowConfirmation(true);
           return;
         }
       }
 
-      // Fallback: Try API lookup
       const product = await productsAPI.getProductByBarcode(data);
-
-      // Immediately update cart state
       addItem({
         barcode: data,
         name: product.name,
         price: product.price,
       });
 
-      // Store for confirmation UI
       setLastScannedItem({
         name: product.name,
         price: product.price,
       });
-
       setShowConfirmation(true);
     } catch (err: any) {
       if (err.message === 'Product not found') {
         Alert.alert(
           'Product Not Found',
-          'This product is not available in ' + (currentStore?.name || 'your store') + '.'
+          `This product is not available in ${currentStore?.name || 'your store'}.`,
         );
       } else {
         Alert.alert('Error', 'Failed to fetch product. Please try again.');
@@ -118,361 +132,433 @@ export default function ScanScreen() {
     navigation.navigate('Cart');
   };
 
-  /* =======================
-     UI
-  ======================= */
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.appName}>Billify</Text>
-          <Text style={styles.subtitle}>Scan products to add</Text>
+  if (!permission.granted) {
+    return (
+      <Screen safeEdges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.permissionWrap}>
+          <Text style={[styles.permissionTitle, { color: colors.text }]}>Camera access required</Text>
+          <Text style={[styles.permissionText, { color: colors.textMuted }]}> 
+            Billify needs camera access to scan barcodes and add products to your cart.
+          </Text>
+          <AppButton onPress={requestPermission}>Allow Camera</AppButton>
         </View>
+      </Screen>
+    );
+  }
 
-        <Pressable
-          style={styles.cartBtn}
-          onPress={() => navigation.navigate('Cart')}
-        >
-          <ShoppingCart color="#fff" size={22} />
-          {items.length > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{items.length}</Text>
-            </View>
-          )}
-        </Pressable>
+  return (
+    <Screen padded={false} safeEdges={['top', 'bottom', 'left', 'right']}>
+      <View style={styles.headerShell}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerCopy}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Smart Scanner</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}> 
+              Keep the barcode inside the frame while the scan line sweeps from top to bottom.
+            </Text>
+          </View>
+          <Pressable style={[styles.cartButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingCart size={22} color="#ffffff" />
+            {items.length > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{items.length}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
       </View>
 
-      {/* Location Header */}
       <LocationHeader />
 
-      {/* Scan Area */}
-      <View style={styles.scanArea}>
-        <View style={styles.scanBox}>
-          <CameraView
-            style={StyleSheet.absoluteFillObject}
-            onBarcodeScanned={handleScan}
-            barcodeScannerSettings={{
-              barcodeTypes: ['ean13', 'ean8', 'code128', 'upc_a'],
-            }}
-          />
+      <View style={styles.stage}>
+        <View
+          style={[
+            styles.scanShell,
+            {
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(15, 23, 42, 0.06)',
+            },
+            shadows[isDark ? 'dark' : 'light'],
+          ]}
+        >
+          <View style={styles.scanBox}>
+            <CameraView
+              style={StyleSheet.absoluteFillObject}
+              onBarcodeScanned={handleScan}
+              barcodeScannerSettings={{
+                barcodeTypes: ['ean13', 'ean8', 'code128', 'upc_a'],
+              }}
+            />
 
-          <View style={styles.frame}>
-            <View style={styles.scanLine} />
-            <ScanLine size={56} color="#4caf50" />
-            <Text style={styles.scanTitle}>Scan product barcode</Text>
-            <Text style={styles.scanHint}>
-              Position the barcode within the frame
-            </Text>
+            <View style={styles.frameOverlay}>
+              <View
+                style={[
+                  styles.frameWindow,
+                  {
+                    borderColor: scanned ? colors.primaryAlt : 'rgba(255,255,255,0.84)',
+                  },
+                ]}
+                onLayout={(event) => setFrameHeight(event.nativeEvent.layout.height)}
+              >
+                <View style={[styles.corner, styles.cornerTopLeft, { borderColor: colors.primary }]} />
+                <View style={[styles.corner, styles.cornerTopRight, { borderColor: colors.primary }]} />
+                <View style={[styles.corner, styles.cornerBottomLeft, { borderColor: colors.primary }]} />
+                <View style={[styles.corner, styles.cornerBottomRight, { borderColor: colors.primary }]} />
+
+                <Animated.View
+                  style={[
+                    styles.scanLine,
+                    {
+                      backgroundColor: colors.primary,
+                      shadowColor: colors.primary,
+                      transform: [{ translateY: scanLineTranslate }],
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.scanInfoRow}>
+            <View style={[styles.scanIconWrap, { backgroundColor: `${colors.primary}18` }]}>
+              <ScanLine size={24} color={colors.primary} />
+            </View>
+            <View style={styles.scanInfoCopy}>
+              <Text style={[styles.scanInfoTitle, { color: colors.text }]}>Live barcode scan</Text>
+              <Text style={[styles.scanInfoText, { color: colors.textMuted }]}> 
+                The animated line shows the active read area and now loops continuously for better scan feedback.
+              </Text>
+            </View>
           </View>
         </View>
       </View>
 
-      {/* DEV ONLY BUTTON */}
-      <View style={styles.devWrapper}>
+      <View style={styles.bottomStack}>
         <Pressable
           onPress={() => {
-            const devItem = DEV_PRODUCT;
-            addItem(devItem);
+            addItem(DEV_PRODUCT);
             setLastScannedItem({
-              name: devItem.name,
-              price: devItem.price,
+              name: DEV_PRODUCT.name,
+              price: DEV_PRODUCT.price,
             });
             setShowConfirmation(true);
           }}
-          style={styles.devBtn}
+          style={[styles.devButton, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <Text style={styles.devText}>+ Add Test Item (DEV)</Text>
+          <Text style={[styles.devButtonText, { color: colors.text }]}>+ Add Test Item (DEV)</Text>
         </Pressable>
+
+        <AppCard>
+          <Text style={[styles.instructionsTitle, { color: colors.text }]}>How it works</Text>
+          <Text style={[styles.instructionsText, { color: colors.textMuted }]}>1. Aim the camera at the barcode.</Text>
+          <Text style={[styles.instructionsText, { color: colors.textMuted }]}>2. Wait for the animated line to pass over it.</Text>
+          <Text style={[styles.instructionsText, { color: colors.textMuted }]}>3. Review the cart after each successful scan.</Text>
+        </AppCard>
       </View>
 
-      {/* Instructions */}
-      <View style={styles.instructions}>
-        <View style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>How it works</Text>
-          <Text style={styles.instructionsText}>• Scan each product</Text>
-          <Text style={styles.instructionsText}>
-            • Items added to cart automatically
-          </Text>
-          <Text style={styles.instructionsText}>
-            • Review cart and checkout
-          </Text>
-        </View>
-      </View>
-
-      {/* Confirmation Modal */}
       <Modal visible={showConfirmation} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmationCard}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}> 
+          <View style={[styles.confirmationCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
             <Pressable
-              style={styles.closeBtn}
+              style={styles.closeButton}
               onPress={() => {
                 setShowConfirmation(false);
                 setTimeout(() => setScanned(false), 300);
               }}
             >
-              <X size={24} color="#6b7280" />
+              <X size={22} color={colors.textSoft} />
             </Pressable>
 
-            <View style={styles.confirmationContent}>
-              <View style={styles.checkmark}>
-                <Text style={styles.checkmarkText}>OK</Text>
-              </View>
+            <View style={[styles.checkmark, { backgroundColor: colors.success }]}> 
+              <Text style={styles.checkmarkText}>OK</Text>
+            </View>
 
-              <Text style={styles.confirmationTitle}>Item Added to Cart</Text>
+            <Text style={[styles.confirmationTitle, { color: colors.text }]}>Item added to cart</Text>
 
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>{lastScannedItem?.name}</Text>
-                <Text style={styles.itemPrice}>₹{lastScannedItem?.price}</Text>
-              </View>
+            <View style={[styles.itemDetails, { backgroundColor: colors.cardAlt }]}> 
+              <Text style={[styles.itemName, { color: colors.text }]}>{lastScannedItem?.name}</Text>
+              <Text style={[styles.itemPrice, { color: colors.primary }]}>₹{lastScannedItem?.price}</Text>
+            </View>
 
-              <View style={styles.confirmationButtons}>
-                <Pressable
-                  style={styles.scanMoreBtn}
-                  onPress={handleScanMore}
-                >
-                  <Text style={styles.scanMoreText}>Scan More</Text>
-                </Pressable>
+            <View style={styles.confirmationButtons}>
+              <Pressable style={[styles.secondaryAction, { borderColor: colors.border, backgroundColor: colors.cardAlt }]} onPress={handleScanMore}>
+                <Text style={[styles.secondaryActionText, { color: colors.text }]}>Scan More</Text>
+              </Pressable>
 
-                <Pressable
-                  style={styles.goToCartBtn}
-                  onPress={handleGoToCart}
-                >
-                  <Text style={styles.goToCartText}>Go To Cart</Text>
-                </Pressable>
-              </View>
+              <Pressable style={[styles.primaryAction, { backgroundColor: colors.primary }]} onPress={handleGoToCart}>
+                <Text style={styles.primaryActionText}>Go To Cart</Text>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </Screen>
   );
 }
 
-/* =======================
-   STYLES
-======================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-
-  permission: {
+  permissionWrap: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.screenX,
   },
-  permissionText: {
-    fontSize: 16,
-    color: '#374151',
-    marginBottom: 16,
+  permissionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     textAlign: 'center',
   },
-  permissionBtn: {
-    backgroundColor: '#4caf50',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
+  permissionText: {
+    marginTop: 8,
+    marginBottom: 18,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
   },
-  permissionBtnText: {
-    color: '#fff',
-    fontWeight: '600',
+  headerShell: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.screenY,
   },
-
-  header: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: '#f3f4f6',
   },
-  appName: { fontSize: 20, fontWeight: 'bold', color: '#1f2937' },
-  subtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-
-  cartBtn: {
-    backgroundColor: '#4caf50',
-    padding: 12,
-    borderRadius: 16,
+  headerCopy: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  headerSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  cartButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#ef4444',
-    width: 20,
+    top: -4,
+    right: -4,
+    minWidth: 20,
     height: 20,
     borderRadius: 10,
+    paddingHorizontal: 5,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#ef4444',
   },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-
-  scanArea: {
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  stage: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: spacing.screenX,
+    paddingVertical: spacing.screenY,
+  },
+  scanShell: {
+    borderRadius: 30,
+    padding: 16,
   },
   scanBox: {
     width: '100%',
-    maxWidth: 330,
     aspectRatio: 1,
-    borderRadius: 28,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#000000',
+  },
+  frameOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 22,
+  },
+  frameWindow: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    position: 'relative',
     overflow: 'hidden',
   },
-  frame: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 3,
-    borderStyle: 'dashed',
-    borderColor: '#d1d5db',
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+  corner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderWidth: 4,
+  },
+  cornerTopLeft: {
+    top: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 20,
+  },
+  cornerTopRight: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 20,
+  },
+  cornerBottomLeft: {
+    left: 0,
+    bottom: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 20,
+  },
+  cornerBottomRight: {
+    right: 0,
+    bottom: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 20,
   },
   scanLine: {
     position: 'absolute',
-    top: '50%',
-    width: '100%',
-    height: 2,
-    backgroundColor: '#4caf50',
-    opacity: 0.7,
+    left: '6%',
+    right: '6%',
+    top: 0,
+    height: 4,
+    borderRadius: 999,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  scanTitle: {
-    marginTop: 12,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+  scanInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 16,
   },
-  scanHint: {
-    fontSize: 13,
-    color: '#6b7280',
+  scanIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  scanInfoCopy: {
+    flex: 1,
+  },
+  scanInfoTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  scanInfoText: {
     marginTop: 4,
-    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 21,
   },
-
-  devWrapper: {
-    paddingHorizontal: 20,
+  bottomStack: {
+    paddingHorizontal: spacing.screenX,
+    paddingBottom: 18,
+  },
+  devButton: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
     marginBottom: 12,
   },
-  devBtn: {
-    backgroundColor: '#e5e7eb',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  devText: {
-    fontWeight: '600',
-    color: '#111827',
-  },
-
-  instructions: {
-    padding: 20,
-    backgroundColor: '#f8f7f4',
-  },
-  instructionsCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 18,
+  devButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   instructionsTitle: {
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#1f2937',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 8,
   },
   instructionsText: {
-    fontSize: 13,
-    color: '#4b5563',
-    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 4,
   },
-
-  /* Confirmation Modal Styles */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   confirmationCard: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 12,
-    maxHeight: '80%',
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 24,
   },
-  closeBtn: {
+  closeButton: {
     alignSelf: 'flex-end',
     padding: 4,
-    marginRight: 8,
-  },
-  confirmationContent: {
-    alignItems: 'center',
   },
   checkmark: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#22c55e',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 12,
+    alignSelf: 'center',
+    marginTop: 4,
   },
   checkmarkText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
+    color: '#ffffff',
+    fontSize: 30,
+    fontWeight: '800',
   },
   confirmationTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 12,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 14,
   },
   itemDetails: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 12,
-    width: '100%',
-    marginBottom: 16,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 16,
     alignItems: 'center',
   },
   itemName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   itemPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#4caf50',
     marginTop: 6,
+    fontSize: 18,
+    fontWeight: '800',
   },
   confirmationButtons: {
-    width: '100%',
+    marginTop: 16,
     gap: 10,
   },
-  scanMoreBtn: {
-    backgroundColor: '#f3f4f6',
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-    paddingVertical: 12,
-    borderRadius: 12,
+  secondaryAction: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  scanMoreText: {
+  secondaryActionText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: '700',
   },
-  goToCartBtn: {
-    backgroundColor: '#4caf50',
-    paddingVertical: 12,
-    borderRadius: 12,
+  primaryAction: {
+    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  goToCartText: {
+  primaryActionText: {
+    color: '#ffffff',
     fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: '800',
   },
 });

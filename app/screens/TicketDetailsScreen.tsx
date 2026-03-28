@@ -1,21 +1,21 @@
-/**
- * TicketDetailsScreen - Display full ticket information
- */
-
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
   ActivityIndicator,
   Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { useEffect, useState } from 'react';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AlertCircle, Clock } from 'lucide-react-native';
+import AppCard from '../components/ui/AppCard';
+import AppHeader from '../components/ui/AppHeader';
+import Screen from '../components/ui/Screen';
+import { useAppTheme } from '../context/ThemeContext';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { supportAPI } from '../services/api';
-import { ArrowLeft, Clock, AlertCircle } from 'lucide-react-native';
+import { radius, shadows, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TicketDetails'>;
 
@@ -36,10 +36,24 @@ const CATEGORY_LABELS: Record<string, string> = {
   'refund-request': 'Refund Request',
   'technical-problem': 'Technical Problem',
   'account-issue': 'Account Issue',
-  'other': 'Other',
+  other: 'Other',
 };
 
+function getStatusColor(status: string | undefined) {
+  switch (status) {
+    case 'open':
+      return '#f59e0b';
+    case 'in-progress':
+      return '#3b82f6';
+    case 'closed':
+      return '#22c55e';
+    default:
+      return '#64748b';
+  }
+}
+
 export default function TicketDetailsScreen({ route, navigation }: Props) {
+  const { colors, isDark } = useAppTheme();
   const { ticketId } = route.params;
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +61,7 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
   const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    loadTicketDetails();
+    void loadTicketDetails();
   }, [ticketId]);
 
   const loadTicketDetails = async () => {
@@ -64,60 +78,43 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
   };
 
   const handleCloseTicket = async () => {
-    if (!ticket) return;
-
-    Alert.alert(
-      'Close Ticket',
-      'Are you sure you want to close this ticket?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Close',
-          style: 'destructive',
-          onPress: async () => {
-            setClosing(true);
-            try {
-              const updatedTicket = await supportAPI.closeTicket(ticketId);
-              setTicket(updatedTicket as TicketDetail);
-              Alert.alert('Success', 'Ticket closed successfully');
-              navigation.goBack();
-            } catch (err: any) {
-              Alert.alert('Error', err.message || 'Failed to close ticket');
-            } finally {
-              setClosing(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const getStatusColor = (status: string | undefined) => {
-    if (!status) return '#6b7280';
-    switch (status) {
-      case 'open':
-        return '#ff9800';
-      case 'in-progress':
-        return '#2196f3';
-      case 'closed':
-        return '#4caf50';
-      default:
-        return '#6b7280';
+    if (!ticket) {
+      return;
     }
-  };
 
-  const getStatusLabel = (status: string | undefined) => {
-    if (!status) return 'Unknown';
-    return status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ');
+    Alert.alert('Close Ticket', 'Are you sure you want to close this ticket?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Close',
+        style: 'destructive',
+        onPress: async () => {
+          setClosing(true);
+          try {
+            const updatedTicket = await supportAPI.closeTicket(ticketId);
+            setTicket(updatedTicket as TicketDetail);
+            Alert.alert('Success', 'Ticket closed successfully');
+            navigation.goBack();
+          } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to close ticket');
+          } finally {
+            setClosing(false);
+          }
+        },
+      },
+    ]);
   };
 
   const getCategoryLabel = (category: string | undefined) => {
-    if (!category) return 'Other';
+    if (!category) {
+      return 'Other';
+    }
+
     return CATEGORY_LABELS[category] || 'Other';
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -129,303 +126,257 @@ export default function TicketDetailsScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#4caf50" />
-      </View>
+      <Screen safeEdges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
     );
   }
 
   if (error || !ticket) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()}>
-            <ArrowLeft size={24} color="#1f2937" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Ticket Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
+      <Screen safeEdges={['top', 'bottom', 'left', 'right']}>
+        <AppHeader title="Ticket Details" subtitle="Review the issue and try again." onBack={() => navigation.goBack()} />
         <View style={styles.centered}>
-          <AlertCircle size={48} color="#ef4444" />
-          <Text style={styles.errorText}>{error || 'Ticket not found'}</Text>
-          <Pressable style={styles.retryBtn} onPress={loadTicketDetails}>
+          <View style={[styles.errorIconWrap, { backgroundColor: colors.cardAlt }]}> 
+            <AlertCircle size={42} color={colors.danger} />
+          </View>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Unable to load ticket</Text>
+          <Text style={[styles.errorText, { color: colors.textMuted }]}>{error || 'Ticket not found'}</Text>
+          <Pressable style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={() => void loadTicketDetails()}>
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>
-      </View>
+      </Screen>
     );
   }
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#1f2937" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Ticket Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
+  const statusColor = getStatusColor(ticket.status);
 
-      {/* Status Card */}
+  return (
+    <Screen scrollable safeEdges={['top', 'bottom', 'left', 'right']} scrollProps={{ showsVerticalScrollIndicator: false }}>
+      <AppHeader
+        title="Ticket Details"
+        subtitle="Track the request, review the latest response, and manage the ticket status."
+        onBack={() => navigation.goBack()}
+      />
+
       <View
         style={[
-          styles.statusCard,
-          { borderLeftColor: getStatusColor(ticket.status) },
+          styles.statusBanner,
+          {
+            backgroundColor: colors.cardAlt,
+            borderColor: colors.border,
+          },
+          shadows[isDark ? 'dark' : 'light'],
         ]}
       >
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Status</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(ticket.status) },
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {getStatusLabel(ticket.status)}
-            </Text>
-          </View>
+        <View style={styles.statusBannerCopy}>
+          <Text style={[styles.statusEyebrow, { color: colors.textSoft }]}>CURRENT STATUS</Text>
+          <Text style={[styles.statusTitle, { color: colors.text }]}> 
+            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
+          </Text>
+        </View>
+        <View style={[styles.statusPill, { backgroundColor: statusColor }]}> 
+          <Text style={styles.statusPillText}>{ticket.status.toUpperCase()}</Text>
         </View>
       </View>
 
-      {/* Ticket Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Ticket Information</Text>
+      <AppCard>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Ticket Information</Text>
 
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Ticket ID</Text>
-            <Text style={styles.infoValue}>{ticket._id.substring(0, 12)}...</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Category</Text>
-            <Text style={styles.infoValue}>{getCategoryLabel(ticket.category)}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Clock size={16} color="#6b7280" />
-            <View style={{ marginLeft: 8, flex: 1 }}>
-              <Text style={styles.infoLabel}>Created</Text>
-              <Text style={styles.infoValue}>{formatDate(ticket.createdAt)}</Text>
-            </View>
-          </View>
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoLabel, { color: colors.textSoft }]}>Ticket ID</Text>
+          <Text style={[styles.infoValue, { color: colors.text }]}>{ticket._id.substring(0, 12)}...</Text>
         </View>
-      </View>
+        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
-      {/* Title */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Title</Text>
-        <View style={styles.titleCard}>
-          <Text style={styles.titleText}>{ticket.title || 'N/A'}</Text>
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoLabel, { color: colors.textSoft }]}>Category</Text>
+          <Text style={[styles.infoValue, { color: colors.text }]}>{getCategoryLabel(ticket.category)}</Text>
         </View>
-      </View>
+        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
-        <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionText}>{ticket.description || 'N/A'}</Text>
-        </View>
-      </View>
-
-      {/* Response (if any) */}
-      {ticket.response && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support Response</Text>
-          <View style={[styles.responseCard, styles.cardBg]}>
-            <Text style={styles.responseText}>{ticket.response}</Text>
-            {ticket.respondedAt && (
-              <Text style={styles.respondedDate}>
-                Responded on {formatDate(ticket.respondedAt)}
-              </Text>
-            )}
+        <View style={styles.infoRow}>
+          <View style={styles.iconLabelRow}>
+            <Clock size={16} color={colors.primary} />
+            <Text style={[styles.infoLabel, { color: colors.textSoft }]}>Created</Text>
           </View>
+          <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(ticket.createdAt)}</Text>
         </View>
-      )}
+      </AppCard>
 
-      {/* Action Button */}
-      {ticket.status === 'open' && (
+      <AppCard>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Title</Text>
+        <Text style={[styles.bodyTitle, { color: colors.text }]}>{ticket.title || 'N/A'}</Text>
+      </AppCard>
+
+      <AppCard>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+        <Text style={[styles.bodyText, { color: colors.textMuted }]}>{ticket.description || 'N/A'}</Text>
+      </AppCard>
+
+      {ticket.response ? (
+        <AppCard style={[styles.responseCard, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}> 
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Support Response</Text>
+          <Text style={[styles.bodyText, { color: colors.text }]}>{ticket.response}</Text>
+          {ticket.respondedAt ? (
+            <Text style={[styles.respondedDate, { color: colors.textSoft }]}>Responded on {formatDate(ticket.respondedAt)}</Text>
+          ) : null}
+        </AppCard>
+      ) : null}
+
+      {ticket.status === 'open' ? (
         <Pressable
-          style={[styles.closeBtn, closing && { opacity: 0.7 }]}
+          style={[
+            styles.closeBtn,
+            {
+              backgroundColor: colors.danger,
+            },
+            closing && styles.disabled,
+          ]}
           onPress={handleCloseTicket}
           disabled={closing}
         >
-          {closing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.closeBtnText}>Close Ticket</Text>
-          )}
+          {closing ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.closeBtnText}>Close Ticket</Text>}
         </Pressable>
-      )}
-
-      <View style={styles.footer} />
-    </ScrollView>
+      ) : null}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
   centered: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.screenX,
+  },
+  errorIconWrap: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '800',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  statusCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusLabel: {
+  errorText: {
+    marginTop: 8,
     fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
+    lineHeight: 21,
+    textAlign: 'center',
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  retryBtn: {
+    marginTop: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: radius.md,
   },
-  statusText: {
-    color: '#fff',
+  retryText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  statusBanner: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusBannerCopy: {
+    flex: 1,
+    marginRight: 12,
+  },
+  statusEyebrow: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
-  section: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  statusTitle: {
+    marginTop: 6,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  statusPillText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: '800',
     marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
+  },
+  iconLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   infoLabel: {
     fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
+    fontWeight: '700',
   },
   infoValue: {
     fontSize: 14,
-    color: '#1f2937',
-    fontWeight: '600',
-    marginLeft: 'auto',
+    fontWeight: '700',
+    marginLeft: 12,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   divider: {
     height: 1,
-    backgroundColor: '#e5e7eb',
   },
-  titleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-  },
-  titleText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+  bodyTitle: {
+    fontSize: 17,
+    fontWeight: '800',
     lineHeight: 24,
   },
-  descriptionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-  },
-  descriptionText: {
+  bodyText: {
     fontSize: 14,
-    color: '#4b5563',
     lineHeight: 22,
   },
   responseCard: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 16,
     borderLeftWidth: 4,
     borderLeftColor: '#10b981',
   },
-  cardBg: {
-    backgroundColor: '#f0fdf4',
-  },
-  responseText: {
-    fontSize: 14,
-    color: '#1f2937',
-    lineHeight: 22,
-  },
   respondedDate: {
-    fontSize: 12,
-    color: '#6b7280',
     marginTop: 12,
-    fontStyle: 'italic',
+    fontSize: 12,
+    fontWeight: '600',
   },
   closeBtn: {
-    backgroundColor: '#ef4444',
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+    minHeight: 52,
+    borderRadius: 16,
     alignItems: 'center',
-    marginVertical: 16,
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   closeBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
   },
-  errorText: {
-    fontSize: 16,
-    color: '#ef4444',
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: '#4caf50',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  footer: {
-    height: 20,
+  disabled: {
+    opacity: 0.72,
   },
 });
