@@ -12,7 +12,12 @@ export default function LayoutClient({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAuthPage = pathname === "/login";
   const isWidePage = ["/support", "/transactions", "/products"].some((route) => pathname === route || pathname.startsWith(route + "/"));
+
+  if (isAuthPage) {
+    return <div className="min-h-screen">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen">

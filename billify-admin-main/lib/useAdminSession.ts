@@ -65,9 +65,8 @@ export function useAdminSession() {
       if (!cancelled) {
         setReady(false);
         setUser(null);
-        setLoading(false);
-        setError("Admin session is unavailable on this host.");
-        router.replace("/");
+        setError(null);
+        router.replace("/login");
       }
     };
 

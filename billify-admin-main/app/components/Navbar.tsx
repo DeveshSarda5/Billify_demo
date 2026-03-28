@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, LogOut, Menu, User } from "lucide-react";
 import { getPageMeta } from "./admin/navigation";
 import ThemeToggle from "./admin/ThemeToggle";
-import { clearAdminSession, getStoredAdminUser, type AdminUser } from "@/lib/adminApi";
+import { ADMIN_SESSION_EVENT, clearAdminSession, getStoredAdminUser, type AdminUser } from "@/lib/adminApi";
 
 export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const pathname = usePathname();
@@ -15,7 +15,18 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const pageMeta = getPageMeta(pathname);
 
   useEffect(() => {
-    setUser(getStoredAdminUser());
+    const syncUser = () => {
+      setUser(getStoredAdminUser());
+    };
+
+    syncUser();
+    window.addEventListener(ADMIN_SESSION_EVENT, syncUser);
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener(ADMIN_SESSION_EVENT, syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
   }, []);
 
   const onLogout = () => {

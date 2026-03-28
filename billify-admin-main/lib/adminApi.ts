@@ -91,6 +91,15 @@ type AuthResponse = {
 
 const TOKEN_KEY = "billify_admin_token";
 const USER_KEY = "billify_admin_user";
+export const ADMIN_SESSION_EVENT = "billify-admin-session-change";
+
+function notifyAdminSessionChange() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(ADMIN_SESSION_EVENT));
+}
 
 function getLocalAdminBootstrapCredentials() {
   const email = process.env.NEXT_PUBLIC_LOCAL_ADMIN_EMAIL?.trim() || "";
@@ -165,6 +174,7 @@ export function saveAdminSession(auth: AuthResponse) {
 
   window.localStorage.setItem(TOKEN_KEY, auth.token);
   window.localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
+  notifyAdminSessionChange();
 }
 
 export function clearAdminSession() {
@@ -174,6 +184,7 @@ export function clearAdminSession() {
 
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
+  notifyAdminSessionChange();
 }
 
 export function shouldUseLocalAdminBootstrap() {
