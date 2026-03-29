@@ -6,7 +6,6 @@ import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
 import AppHeader from '../components/ui/AppHeader';
 import Screen from '../components/ui/Screen';
-import LocationHeader from '../components/LocationHeader';
 import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { billsAPI, BillResponse } from '../services/api';
@@ -117,8 +116,6 @@ export default function PreviousBillsScreen({ navigation }: Props) {
       <View style={styles.headerWrap}>
         <AppHeader title="Previous Bills" subtitle="Review, sort, and reopen past purchases." onBack={() => navigation.goBack()} />
       </View>
-
-      <LocationHeader />
 
       <View style={styles.content}>
         <View style={styles.sortControls}>

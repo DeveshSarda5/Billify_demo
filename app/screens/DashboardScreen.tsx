@@ -4,7 +4,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CreditCard, Gift, HelpCircle, LogOut, Receipt, ScanBarcode, User } from 'lucide-react-native';
 import AppCard from '../components/ui/AppCard';
 import Screen from '../components/ui/Screen';
-import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -28,20 +27,17 @@ export default function DashboardScreen({ navigation }: Props) {
         <Screen scrollable padded={false}>
             <View style={styles.headerWrap}>
                 <View style={styles.headerRow}>
-                    <View>
+                    <View style={styles.headerCopy}>
                         <Text style={[styles.title, { color: colors.text }]}>Billify</Text>
                         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Welcome back, {user?.name || 'Guest'}.</Text>
                     </View>
-                    <View style={styles.headerActions}>
-                        <ThemeToggleButton />
-                        <Pressable
-                            style={({ pressed }) => [styles.logoutBtn, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
-                            onPress={logout}
-                        >
-                            <LogOut size={18} color={colors.primary} />
-                            <Text style={[styles.logoutText, { color: colors.text }]}>Logout</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        style={({ pressed }) => [styles.logoutBtn, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
+                        onPress={logout}
+                    >
+                        <LogOut size={18} color={colors.primary} />
+                        <Text style={[styles.logoutText, { color: colors.text }]}>Logout</Text>
+                    </Pressable>
                 </View>
             </View>
 
@@ -77,8 +73,8 @@ export default function DashboardScreen({ navigation }: Props) {
                                 <View style={[styles.iconBox, getActionIconStyle(key)]}>
                                     <Icon size={22} color="#ffffff" />
                                 </View>
-                                <Text style={[styles.cardTitle, { color: colors.text }]}>{title}</Text>
-                                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+                                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>{title}</Text>
+                                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]} numberOfLines={2}>{subtitle}</Text>
                             </AppCard>
                         </Pressable>
                     ))}
@@ -127,14 +123,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 12,
     },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
+    headerCopy: {
+        flex: 1,
+        minWidth: 0,
     },
     logoutBtn: {
         minHeight: 42,
+        minWidth: 108,
         borderRadius: radius.md,
         borderWidth: 1,
         flexDirection: 'row',
@@ -142,6 +139,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 14,
         gap: 8,
+        flexShrink: 0,
     },
     logoutText: {
         fontSize: 13,
@@ -215,12 +213,13 @@ const styles = StyleSheet.create({
     },
     gridItem: {
         width: '48%',
+        marginBottom: 16,
     },
     actionCard: {
-        minHeight: 134,
+        height: 156,
         borderRadius: 20,
         padding: 16,
-        marginBottom: 16,
+        justifyContent: 'flex-start',
     },
     iconBox: {
         width: 48,
@@ -233,11 +232,13 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 15,
         fontWeight: '700',
+        minHeight: 40,
     },
     cardSubtitle: {
         fontSize: 12,
         lineHeight: 18,
         marginTop: 6,
+        minHeight: 36,
     },
     helpCard: {
         flexDirection: 'row',

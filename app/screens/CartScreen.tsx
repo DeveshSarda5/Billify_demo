@@ -3,7 +3,6 @@ import { Plus, Minus, Trash2, Tag } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { useState, useMemo, useEffect } from 'react';
-import LocationHeader from '../components/LocationHeader';
 import { offersAPI, type OfferResponse } from '../services/api';
 
 type SortOption = 'name' | 'quantity' | 'price' | 'none';
@@ -91,8 +90,6 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <LocationHeader />
-
       {/* Sort Controls */}
       <View style={styles.sortControls}>
         <Text style={styles.sortLabel}>Sort by:</Text>

@@ -12,8 +12,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { ScanLine, ShoppingCart, X } from 'lucide-react-native';
-import LocationHeader from '../components/LocationHeader';
+import { ShoppingCart, X } from 'lucide-react-native';
 import AppCard from '../components/ui/AppCard';
 import AppButton from '../components/ui/AppButton';
 import Screen from '../components/ui/Screen';
@@ -153,7 +152,7 @@ export default function ScanScreen() {
           <View style={styles.headerCopy}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Smart Scanner</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}> 
-              Keep the barcode inside the frame while the scan line sweeps from top to bottom.
+              Keep the barcode inside the wide frame while the scan line sweeps from top to bottom.
             </Text>
           </View>
           <Pressable style={[styles.cartButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Cart')}>
@@ -166,8 +165,6 @@ export default function ScanScreen() {
           </Pressable>
         </View>
       </View>
-
-      <LocationHeader />
 
       <View style={styles.stage}>
         <View
@@ -217,17 +214,6 @@ export default function ScanScreen() {
             </View>
           </View>
 
-          <View style={styles.scanInfoRow}>
-            <View style={[styles.scanIconWrap, { backgroundColor: `${colors.primary}18` }]}>
-              <ScanLine size={24} color={colors.primary} />
-            </View>
-            <View style={styles.scanInfoCopy}>
-              <Text style={[styles.scanInfoTitle, { color: colors.text }]}>Live barcode scan</Text>
-              <Text style={[styles.scanInfoText, { color: colors.textMuted }]}> 
-                The animated line shows the active read area and now loops continuously for better scan feedback.
-              </Text>
-            </View>
-          </View>
         </View>
       </View>
 
@@ -239,6 +225,7 @@ export default function ScanScreen() {
               name: DEV_PRODUCT.name,
               price: DEV_PRODUCT.price,
             });
+            setScanned(true);
             setShowConfirmation(true);
           }}
           style={[styles.devButton, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -266,10 +253,6 @@ export default function ScanScreen() {
             >
               <X size={22} color={colors.textSoft} />
             </Pressable>
-
-            <View style={[styles.checkmark, { backgroundColor: colors.success }]}> 
-              <Text style={styles.checkmarkText}>OK</Text>
-            </View>
 
             <Text style={[styles.confirmationTitle, { color: colors.text }]}>Item added to cart</Text>
 
@@ -370,7 +353,7 @@ const styles = StyleSheet.create({
   },
   scanBox: {
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: 1.22,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#000000',
@@ -379,12 +362,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 26,
   },
   frameWindow: {
     width: '100%',
-    aspectRatio: 1,
-    borderRadius: 24,
+    height: '38%',
+    minHeight: 120,
+    borderRadius: 22,
     borderWidth: 1.5,
     position: 'relative',
     overflow: 'hidden',
@@ -435,31 +420,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  scanInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 16,
-  },
-  scanIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  scanInfoCopy: {
-    flex: 1,
-  },
-  scanInfoTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  scanInfoText: {
-    marginTop: 4,
-    fontSize: 14,
-    lineHeight: 21,
-  },
   bottomStack: {
     paddingHorizontal: spacing.screenX,
     paddingBottom: 18,
@@ -501,25 +461,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     padding: 4,
   },
-  checkmark: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginTop: 4,
-  },
-  checkmarkText: {
-    color: '#ffffff',
-    fontSize: 30,
-    fontWeight: '800',
-  },
   confirmationTitle: {
     textAlign: 'center',
     fontSize: 20,
     fontWeight: '800',
-    marginTop: 14,
+    marginTop: 10,
   },
   itemDetails: {
     borderRadius: 18,

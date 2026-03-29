@@ -16,7 +16,7 @@ export default function AppHeader({
   subtitle,
   onBack,
   rightSlot,
-  showThemeToggle = true,
+  showThemeToggle = false,
 }: AppHeaderProps) {
   const { colors } = useAppTheme();
 

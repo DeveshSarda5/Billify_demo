@@ -11,7 +11,6 @@ import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { billsAPI } from '../services/api';
 import { getReadableRazorpayError, openRazorpayWebCheckout } from '../services/razorpayPayment';
-import LocationHeader from '../components/LocationHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -94,7 +93,6 @@ export default function PaymentScreen({ route, navigation }: Props) {
           onBack={() => navigation.goBack()}
         />
       </View>
-      <LocationHeader />
       <View style={styles.content}>
         <AppCard>
           <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Amount to Pay</Text>

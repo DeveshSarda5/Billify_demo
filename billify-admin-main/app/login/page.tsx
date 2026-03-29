@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import DirectionalRiveButton from "../components/DirectionalRiveButton";
 import Logo from "../components/Logo";
 import {
   bootstrapLocalAdminSession,
@@ -109,13 +110,9 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary-app w-full rounded-2xl px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <DirectionalRiveButton type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
-          </button>
+          </DirectionalRiveButton>
         </form>
       </div>
     </div>

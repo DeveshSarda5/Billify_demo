@@ -5,7 +5,6 @@ import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
 import AppInput from '../components/ui/AppInput';
 import Screen from '../components/ui/Screen';
-import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { authAPI } from '../services/api';
@@ -144,10 +143,6 @@ export default function SignupScreen({ navigation }: any) {
 
   return (
     <Screen scrollable>
-      <View style={styles.topBar}>
-        <ThemeToggleButton />
-      </View>
-
       <View style={styles.header}>
         <View style={[styles.logo, { backgroundColor: colors.primary }]}>
           <ShoppingCart size={32} color="#fff" />

@@ -7,6 +7,7 @@ import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
 import AppHeader from '../components/ui/AppHeader';
 import Screen from '../components/ui/Screen';
+import ThemeToggleButton from '../components/ui/ThemeToggleButton';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -134,6 +135,7 @@ export default function ProfileScreen({ navigation }: Props) {
                 <SettingItem label="Edit Profile" onPress={() => navigation.navigate('EditProfile')} colors={colors} />
                 <SettingItem label="Change Password" onPress={() => navigation.navigate('ChangePassword')} colors={colors} />
                 <SettingItem label="Notifications" onPress={() => navigation.navigate('NotificationSettings')} colors={colors} />
+                <SettingToggleItem label="Your mode" colors={colors} />
                 <SettingItem label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} colors={colors} />
                 <SettingItem label="Help & Support" onPress={() => navigation.navigate('HelpSupport')} colors={colors} />
             </AppCard>
@@ -195,6 +197,24 @@ function SettingItem({
             <Text style={[styles.settingText, { color: colors.text }]}>{label}</Text>
             <ChevronRight size={18} color={colors.textSoft} />
         </Pressable>
+    );
+}
+
+function SettingToggleItem({
+    label,
+    colors,
+}: {
+    label: string;
+    colors: {
+        text: string;
+        divider: string;
+    };
+}) {
+    return (
+        <View style={[styles.settingItem, styles.settingToggleItem, { borderBottomColor: colors.divider }]}>
+            <Text style={[styles.settingText, { color: colors.text }]}>{label}</Text>
+            <ThemeToggleButton />
+        </View>
     );
 }
 
@@ -324,5 +344,8 @@ const styles = StyleSheet.create({
     settingText: {
         fontSize: 15,
         fontWeight: '600',
+    },
+    settingToggleItem: {
+        gap: 12,
     },
 });

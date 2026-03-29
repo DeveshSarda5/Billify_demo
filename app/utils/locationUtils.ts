@@ -5,6 +5,11 @@
 
 import { STORE_LOCATIONS, StoreLocation } from '../constants/storeLocations';
 
+export type UserCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
 /**
  * Calculate distance between two GPS coordinates using Haversine formula.
  * @param lat1 - Current latitude
@@ -42,7 +47,28 @@ const toRadians = (degrees: number): number => {
 export type DetectedStore = {
   id: string;
   name: string;
+  address?: string;
+  area?: string;
+  radius?: number;
+  distanceMeters?: number | null;
 };
+
+export type StoreWithDistance = StoreLocation & {
+  distanceMeters: number | null;
+  isNearest: boolean;
+};
+
+export const mapStoreToDetectedStore = (
+  store: StoreLocation,
+  distanceMeters: number | null = null
+): DetectedStore => ({
+  id: store.id,
+  name: store.name,
+  address: store.address,
+  area: store.area,
+  radius: store.radius,
+  distanceMeters,
+});
 
 /**
  * Detect which predefined store location the user is inside based on GPS coordinates.
@@ -67,10 +93,7 @@ export const detectStoreByLocation = (
 
     if (distance <= store.radius && distance < minDistance) {
       minDistance = distance;
-      closestStore = {
-        id: store.id,
-        name: store.name,
-      };
+      closestStore = mapStoreToDetectedStore(store, distance);
     }
   }
 
@@ -89,6 +112,41 @@ export const getAllStores = (): StoreLocation[] => {
  */
 export const getStoreById = (id: string): StoreLocation | undefined => {
   return STORE_LOCATIONS.find((store) => store.id === id);
+};
+
+export const getStoresSortedByDistance = (
+  userLocation: UserCoordinates | null,
+  manualMode = false
+): StoreWithDistance[] => {
+  const stores = STORE_LOCATIONS.map((store) => ({
+    ...store,
+    distanceMeters: userLocation
+      ? calculateDistance(userLocation.latitude, userLocation.longitude, store.latitude, store.longitude)
+      : null,
+    isNearest: false,
+  }));
+
+  if (userLocation && !manualMode) {
+    stores.sort((left, right) => (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity));
+  }
+
+  if (stores.length > 0 && userLocation && !manualMode) {
+    stores[0].isNearest = true;
+  }
+
+  return stores;
+};
+
+export const formatDistance = (distanceMeters: number | null | undefined): string => {
+  if (distanceMeters == null) {
+    return 'Distance unavailable';
+  }
+
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m away`;
+  }
+
+  return `${(distanceMeters / 1000).toFixed(distanceMeters < 10000 ? 1 : 0)} km away`;
 };
 
 /**
