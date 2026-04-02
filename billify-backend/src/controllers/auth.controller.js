@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const PhoneOTP = require('../models/PhoneOTP');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -17,10 +18,26 @@ const serializeUser = (user) => ({
   emailVerified: user.emailVerified,
 });
 
+const OTP_EXPIRY_MINUTES = 5;
+
+const normalizePhone = (value = '') => value.replace(/\D/g, '').slice(-10);
+
+const isOtpExpired = (expiresAt) => new Date(expiresAt).getTime() <= Date.now();
+
 // ================= SIGNUP =================
 exports.signup = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
+    const normalizedPhone = normalizePhone(phone || '');
+
+    if (!normalizedPhone) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    const phoneVerification = await PhoneOTP.findOne({ phone: normalizedPhone });
+    if (!phoneVerification || !phoneVerification.verified || isOtpExpired(phoneVerification.expiresAt)) {
+      return res.status(400).json({ message: 'Please verify your phone number before signing up' });
+    }
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -30,11 +47,13 @@ exports.signup = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      phone,
+      phone: normalizedPhone,
       password,
       emailVerified: true, // Always true now
       role: 'user',
     });
+
+    await PhoneOTP.deleteOne({ phone: normalizedPhone });
 
     res.status(201).json({
       token: generateToken(user._id),
@@ -155,47 +174,49 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
-// ================= OTP STORAGE (IN-MEMORY) =================
-// Format: { phoneNumber: { otp: '123456', timestamp: Date, verified: false } }
-const otpStorage = {};
-
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-const isOTPExpired = (timestamp, expiryMinutes = 5) => {
-  const now = new Date();
-  const diff = (now - new Date(timestamp)) / (1000 * 60); // in minutes
-  return diff > expiryMinutes;
 };
 
 // ================= SEND OTP =================
 exports.sendOTP = async (req, res) => {
   try {
-    const { phone } = req.body;
+    const normalizedPhone = normalizePhone(req.body.phone || '');
 
-    if (!phone || phone.trim() === '') {
+    if (!normalizedPhone || normalizedPhone.length !== 10) {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    // Generate OTP
     const otp = generateOTP();
-    
-    // Store OTP with timestamp
-    otpStorage[phone] = {
-      otp,
-      timestamp: new Date(),
-      verified: false
+
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await PhoneOTP.findOneAndUpdate(
+      { phone: normalizedPhone },
+      {
+        phone: normalizedPhone,
+        otp,
+        verified: false,
+        expiresAt,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    console.log(`\n📱 OTP for ${normalizedPhone}: ${otp} (expires in ${OTP_EXPIRY_MINUTES} minutes)`);
+    console.log(`⏰ Generated at: ${new Date().toLocaleTimeString()}`);
+    console.log(`⌛ Expires at: ${expiresAt.toLocaleTimeString()}\n`);
+
+    const payload = {
+      message: 'OTP sent successfully',
+      phone: normalizedPhone,
+      expiresInMinutes: OTP_EXPIRY_MINUTES,
     };
 
-    // Log OTP for demo purposes
-    console.log(`\n📱 OTP for ${phone}: ${otp} (expires in 5 minutes)`);
-    console.log(`⏰ Generated at: ${new Date().toLocaleTimeString()}\n`);
+    if (process.env.NODE_ENV !== 'production') {
+      payload.otp = otp;
+    }
 
-    res.status(200).json({
-      message: 'OTP sent successfully',
-      phone, // Return phone for confirmation
-    });
+    res.status(200).json(payload);
 
   } catch (error) {
     console.error('Send OTP Error:', error);
@@ -206,37 +227,35 @@ exports.sendOTP = async (req, res) => {
 // ================= VERIFY OTP =================
 exports.verifyOTP = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const normalizedPhone = normalizePhone(req.body.phone || '');
+    const otp = String(req.body.otp || '').trim();
 
-    if (!phone || !otp) {
+    if (!normalizedPhone || !otp) {
       return res.status(400).json({ message: 'Phone and OTP are required' });
     }
 
-    // Check if OTP exists
-    const storedOTP = otpStorage[phone];
+    const storedOTP = await PhoneOTP.findOne({ phone: normalizedPhone });
     if (!storedOTP) {
       return res.status(400).json({ message: 'OTP not found. Please request a new OTP.' });
     }
 
-    // Check if OTP is expired
-    if (isOTPExpired(storedOTP.timestamp)) {
-      delete otpStorage[phone];
+    if (isOtpExpired(storedOTP.expiresAt)) {
+      await PhoneOTP.deleteOne({ phone: normalizedPhone });
       return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
     }
 
-    // Check if OTP matches
     if (storedOTP.otp !== otp) {
       return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
     }
 
-    // Mark as verified
-    otpStorage[phone].verified = true;
+    storedOTP.verified = true;
+    await storedOTP.save();
 
-    console.log(`✅ OTP verified for ${phone}`);
+    console.log(`✅ OTP verified for ${normalizedPhone}`);
 
     res.status(200).json({
       message: 'OTP verified successfully',
-      phone,
+      phone: normalizedPhone,
       verified: true
     });
 
@@ -249,17 +268,17 @@ exports.verifyOTP = async (req, res) => {
 // ================= CHECK PHONE VERIFICATION STATUS =================
 exports.checkPhoneVerification = async (req, res) => {
   try {
-    const { phone } = req.query;
+    const normalizedPhone = normalizePhone(String(req.query.phone || ''));
 
-    if (!phone) {
+    if (!normalizedPhone) {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    const otpData = otpStorage[phone];
-    const isVerified = otpData && otpData.verified === true;
+    const otpData = await PhoneOTP.findOne({ phone: normalizedPhone });
+    const isVerified = Boolean(otpData && otpData.verified === true && !isOtpExpired(otpData.expiresAt));
 
     res.status(200).json({
-      phone,
+      phone: normalizedPhone,
       verified: isVerified
     });
 

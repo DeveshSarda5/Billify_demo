@@ -64,9 +64,6 @@ try {
   process.exit(1);
 }
 
-// Connect to Database
-connectDB();
-
 const app = express();
 
 const detectedIP = process.env.SERVER_IP || getLocalIPv4Address();
@@ -78,7 +75,7 @@ const allowedOrigins = [
   /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
   /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
   /^http:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/,
-  /^https?:\/\/[a-z0-9-]+\.ngrok(?:-free)?\.app$/,
+  /^https?:\/\/[a-z0-9-]+\.ngrok(?:-free)?\.(?:app|dev)$/,
   /^exp:\/\//,
   /^http:\/\/.*:8081$/,
 ];
@@ -155,9 +152,18 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 
-// ✅ IMPORTANT: listen on all network interfaces
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 Server running at:');
-  console.log(`http://${detectedIP}:${PORT}`);
-  console.log(`http://localhost:${PORT}`);
+async function startServer() {
+  await connectDB();
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('🚀 Server running at:');
+    console.log(`http://${detectedIP}:${PORT}`);
+    console.log(`http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('🔴 STARTUP FAILED - Server could not start');
+  console.error(error);
+  process.exit(1);
 });

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import DirectionalRiveButton from "../components/DirectionalRiveButton";
+import CatButton from "../components/CatButton";
 import Logo from "../components/Logo";
 import {
   bootstrapLocalAdminSession,
@@ -110,9 +110,9 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <DirectionalRiveButton type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
-          </DirectionalRiveButton>
+          <CatButton type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Log In"}
+          </CatButton>
         </form>
       </div>
     </div>

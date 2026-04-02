@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Check, ChevronRight, Edit2, Mail, Phone, User } from 'lucide-react-native';
+import { ChevronRight, Edit2, Phone, User } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
@@ -15,16 +15,13 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
-    const { logout, user, sendEmailVerification } = useAuth();
+    const { logout, user } = useAuth();
     const { colors, isDark } = useAppTheme();
     const [loading, setLoading] = useState(false);
-    const [verificationSending, setVerificationSending] = useState(false);
 
     const userData = {
         name: user?.name || 'Guest User',
-        email: user?.email || 'No email provided',
         phone: user?.phone || 'No phone provided',
-        emailVerified: user?.emailVerified || false,
     };
 
     const handleLogout = () => {
@@ -40,18 +37,6 @@ export default function ProfileScreen({ navigation }: Props) {
                 },
             },
         ]);
-    };
-
-    const handleSendVerificationEmail = async () => {
-        try {
-            setVerificationSending(true);
-            await sendEmailVerification();
-            Alert.alert('Verification Email Sent', 'Check your email inbox for the verification link.');
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to send verification email');
-        } finally {
-            setVerificationSending(false);
-        }
     };
 
     if (loading) {
@@ -93,39 +78,11 @@ export default function ProfileScreen({ navigation }: Props) {
                     <User size={36} color="#fff" />
                 </View>
                 <Text style={[styles.name, { color: colors.text }]}>{userData.name}</Text>
-                <Text style={[styles.email, { color: colors.textMuted }]}>{userData.email}</Text>
             </LinearGradient>
-
-            {!userData.emailVerified ? (
-                <AppCard style={{ backgroundColor: colors.warningBg }}>
-                    <View style={styles.bannerRow}>
-                        <View style={styles.bannerCopy}>
-                            <Text style={[styles.bannerTitle, { color: colors.warningText }]}>Verify Your Email</Text>
-                            <Text style={[styles.bannerText, { color: colors.warningText }]}>Add another layer of security to your account.</Text>
-                        </View>
-                        <AppButton onPress={handleSendVerificationEmail} loading={verificationSending}>
-                            Send
-                        </AppButton>
-                    </View>
-                </AppCard>
-            ) : null}
 
             <AppCard>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Information</Text>
                 <InfoRow icon={<User size={18} color={colors.primary} />} label="Full Name" value={userData.name} colors={colors} />
-                <Divider color={colors.divider} />
-                <InfoRow
-                    icon={<Mail size={18} color={colors.primary} />}
-                    label="Email"
-                    value={userData.email}
-                    colors={colors}
-                    badge={userData.emailVerified ? (
-                        <View style={[styles.verifiedBadge, { backgroundColor: colors.success }]}>
-                            <Check size={12} color="#fff" />
-                            <Text style={styles.verifiedText}>Verified</Text>
-                        </View>
-                    ) : null}
-                />
                 <Divider color={colors.divider} />
                 <InfoRow icon={<Phone size={18} color={colors.primary} />} label="Phone" value={userData.phone} colors={colors} />
             </AppCard>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { LogIn, ShoppingCart } from 'lucide-react-native';
+import { ShoppingCart } from 'lucide-react-native';
 import AppButton from '../components/ui/AppButton';
 import AppCard from '../components/ui/AppCard';
 import AppInput from '../components/ui/AppInput';
@@ -10,14 +10,13 @@ import { useAppTheme } from '../context/ThemeContext';
 import { radius } from '../theme';
 
 export default function LoginScreen({ navigation }: any) {
-  const { login, guestLogin } = useAuth();
-  const { colors, isDark } = useAppTheme();
+  const { login } = useAuth();
+  const { colors } = useAppTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,19 +34,6 @@ export default function LoginScreen({ navigation }: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    try {
-      setGuestLoading(true);
-      setError('');
-      await guestLogin();
-      Alert.alert('Guest Mode', 'You are logged in as a guest');
-    } catch (err: any) {
-      setError(err.message || 'Failed to login as guest');
-    } finally {
-      setGuestLoading(false);
     }
   };
 
@@ -88,23 +74,6 @@ export default function LoginScreen({ navigation }: any) {
         {error ? <Text style={[styles.error, { backgroundColor: colors.warningBg, color: colors.warningText }]}>{error}</Text> : null}
 
         <AppButton onPress={handleLogin} loading={loading}>Login</AppButton>
-
-        <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
-          <Text style={[styles.dividerText, { color: colors.textSoft }]}>OR</Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
-        </View>
-
-        <AppButton onPress={handleGuestLogin} loading={guestLoading} variant="secondary">
-          Continue as Guest
-        </AppButton>
-
-        {!guestLoading ? (
-          <View style={styles.guestHintRow}>
-            <LogIn size={16} color={colors.primary} />
-            <Text style={[styles.guestHint, { color: colors.textMuted }]}>Browse items, scan products, and preview checkout without creating an account.</Text>
-          </View>
-        ) : null}
       </AppCard>
 
       <Text style={[styles.switchText, { color: colors.textMuted }]}> 
@@ -113,11 +82,6 @@ export default function LoginScreen({ navigation }: any) {
           Sign Up
         </Text>
       </Text>
-
-      <View style={[styles.infoBox, { backgroundColor: colors.cardAlt, borderLeftColor: colors.primaryAlt }]}> 
-        <Text style={[styles.infoTitle, { color: colors.primaryAlt }]}>Guest Mode</Text>
-        <Text style={[styles.infoText, { color: colors.textMuted }]}>Browse the store, manage your cart, and review bills before deciding to sign up.</Text>
-      </View>
     </Screen>
   );
 }
@@ -165,31 +129,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 13,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  guestHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  guestHint: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-  },
   switchText: {
     textAlign: 'center',
     fontSize: 14,
@@ -197,19 +136,5 @@ const styles = StyleSheet.create({
   },
   link: {
     fontWeight: '700',
-  },
-  infoBox: {
-    borderLeftWidth: 4,
-    padding: 14,
-    borderRadius: radius.md,
-  },
-  infoTitle: {
-    fontWeight: '700',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 12,
-    lineHeight: 18,
   },
 });

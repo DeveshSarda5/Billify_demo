@@ -74,6 +74,17 @@ function validateEnvironment() {
     }
   });
 
+  const mongoUri = (process.env.MONGO_URI || '').trim();
+  if (mongoUri) {
+    if (mongoUri.startsWith('MONGO_URI=')) {
+      missing.push('MONGO_URI - value must be only the connection string, not prefixed with MONGO_URI=');
+    } else if (!/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+      missing.push('MONGO_URI - must start with mongodb:// or mongodb+srv://');
+    } else if (/cluster0\.xxxxx\.mongodb\.net|cluster-name\.mongodb\.net|USERNAME|PASSWORD|your_mongodb_connection_string_here/i.test(mongoUri)) {
+      missing.push('MONGO_URI - still contains example placeholder values; replace it with the exact Atlas Driver connection string');
+    }
+  }
+
   // Razorpay pair validation (if one is set, both must be set)
   const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || '').trim();
   const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();

@@ -70,11 +70,12 @@ export default function SignupScreen({ navigation }: any) {
     try {
       setOtpLoading(true);
       setError('');
-      await authAPI.sendOTP(phone);
+      const response = await authAPI.sendOTP(phone);
       setOtpSent(true);
       setCanResendOtp(false);
       setResendTimer(30);
-      Alert.alert('OTP Sent', `An OTP has been sent to ${phone}`);
+      const otpMessage = response.otp ? `\nDemo OTP: ${response.otp}` : '';
+      Alert.alert('OTP Sent', `An OTP has been generated for ${response.phone}.${otpMessage}`);
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {

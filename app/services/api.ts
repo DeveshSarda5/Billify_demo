@@ -139,7 +139,7 @@ export const authAPI = {
 
     async sendOTP(phone: string) {
         try {
-            return await apiPost<{ message: string; phone: string }>('/auth/send-otp', { phone }, false);
+            return await apiPost<{ message: string; phone: string; otp?: string; expiresInMinutes?: number }>('/auth/send-otp', { phone }, false);
         } catch (error) {
             apiLogger.error('Failed to send OTP', error);
             throw error;

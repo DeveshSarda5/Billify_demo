@@ -1,7 +1,7 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
 import { paymentAPI } from './api';
-import { API_BASE_URL, apiLogger } from '../config/apiConfig';
+import { apiLogger, getApiBaseUrl } from '../config/apiConfig';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Prefill = {
@@ -98,7 +98,7 @@ function buildHostedCheckoutUrl(params: {
   callbackUrl: string;
   prefill: Prefill;
 }) {
-  const baseUrl = `${API_BASE_URL}/payments/checkout`;
+  const baseUrl = `${getApiBaseUrl()}/payments/checkout`;
   const query = [
     `requestId=${encodeQueryValue(params.requestId)}`,
     `keyId=${encodeQueryValue(params.keyId)}`,
@@ -157,13 +157,15 @@ export async function openRazorpayWebCheckout(
 ): Promise<PaymentSuccess> {
   const envKey = (process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '').trim();
 
-  if (!API_BASE_URL.startsWith('https://')) {
+  const apiBaseUrl = getApiBaseUrl();
+
+  if (!apiBaseUrl.startsWith('https://')) {
     apiLogger.warn('Razorpay checkout works best with an HTTPS backend URL. Update EXPO_PUBLIC_API_BASE_URL to your active ngrok https URL.', {
-      API_BASE_URL,
+      API_BASE_URL: apiBaseUrl,
     });
   }
 
-  apiLogger.info('Creating Razorpay order...', { amountRupees, baseUrl: API_BASE_URL });
+  apiLogger.info('Creating Razorpay order...', { amountRupees, baseUrl: apiBaseUrl });
   const orderData = await paymentAPI.createOrder(amountRupees);
   const key = (orderData.key || envKey || '').trim();
   if (!key) {

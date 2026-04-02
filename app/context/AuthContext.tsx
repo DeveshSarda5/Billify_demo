@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authAPI, AuthResponse, User } from "../services/api";
+import { setCachedToken } from "../config/apiConfig";
 
 type AuthContextType = {
   isLoggedIn: boolean;
-  isGuest: boolean;
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -15,7 +15,6 @@ type AuthContextType = {
     phone?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  guestLogin: () => Promise<void>;
   setUser: (user: User | null) => void;
   refreshProfile: () => Promise<void>;
   sendEmailVerification: () => Promise<void>;
@@ -28,7 +27,6 @@ const AuthContext = createContext<AuthContextType>(null as any);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -37,24 +35,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
-        const userDataStr = await AsyncStorage.getItem("user");
-        const isGuestMode = await AsyncStorage.getItem("isGuest");
+        const [token, userDataStr] = await Promise.all([
+          AsyncStorage.getItem("token"),
+          AsyncStorage.getItem("user"),
+        ]);
 
-        if (isGuestMode === "true") {
-          // Restore guest mode
-          setIsGuest(true);
-          setIsLoggedIn(true);
-          if (userDataStr) {
-            setUser(JSON.parse(userDataStr));
-          }
-        } else if (token) {
+        await AsyncStorage.removeItem("isGuest");
+
+        if (token) {
+          setCachedToken(token);
           if (userDataStr) {
             setUser(JSON.parse(userDataStr));
             setIsLoggedIn(true);
           }
-          // Always try to get fresh data if token exists
-          await refreshProfile();
+          // Refresh profile in background — don't block the UI
+          refreshProfile().catch(() => {});
         }
       } catch (error) {
         console.error("Auth restore failed:", error);
@@ -96,35 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       await AsyncStorage.setItem("token", response.token);
+      setCachedToken(response.token);
       await AsyncStorage.setItem("user", JSON.stringify(userData));
-      await AsyncStorage.removeItem("isGuest"); // Clear guest mode
+      await AsyncStorage.removeItem("isGuest");
 
       setUser(userData);
       setIsLoggedIn(true);
-      setIsGuest(false);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // GUEST LOGIN
-  const guestLogin = async () => {
-    try {
-      const guestUser: User = {
-        id: `guest_${Date.now()}`,
-        name: "Guest User",
-        email: "",
-        phone: "",
-        location: undefined,
-      };
-
-      await AsyncStorage.setItem("user", JSON.stringify(guestUser));
-      await AsyncStorage.setItem("isGuest", "true");
-      await AsyncStorage.removeItem("token"); // Remove auth token
-
-      setUser(guestUser);
-      setIsLoggedIn(true);
-      setIsGuest(true);
     } catch (error) {
       throw error;
     }
@@ -153,12 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Auto-login after signup
       await AsyncStorage.setItem("token", response.token);
+      setCachedToken(response.token);
       await AsyncStorage.setItem("user", JSON.stringify(userData));
-      await AsyncStorage.removeItem("isGuest"); // Clear guest mode
+      await AsyncStorage.removeItem("isGuest");
 
       setUser(userData);
       setIsLoggedIn(true);
-      setIsGuest(false);
     } catch (error) {
       throw error;
     }
@@ -167,12 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // LOGOUT
   const logout = async () => {
     await AsyncStorage.removeItem("token");
+    setCachedToken(null);
     await AsyncStorage.removeItem("user");
     await AsyncStorage.removeItem("isGuest");
 
     setUser(null);
     setIsLoggedIn(false);
-    setIsGuest(false);
     setPhoneVerified(false);
   };
 
@@ -190,13 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         isLoggedIn,
-        isGuest,
         user,
         loading,
         login,
         signup,
         logout,
-        guestLogin,
         setUser,
         refreshProfile,
         sendEmailVerification,
