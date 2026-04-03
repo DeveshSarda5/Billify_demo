@@ -70,6 +70,8 @@ const detectedIP = process.env.SERVER_IP || getLocalIPv4Address();
 
 
 const allowedOrigins = [
+  'http://localhost:3000',
+  'https://billify-demo.vercel.app',
   /^http:\/\/localhost:\d+$/,
   /^http:\/\/127\.0\.0\.1:\d+$/,
   /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
@@ -86,7 +88,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    const isAllowed = allowedOrigins.some((pattern) => pattern.test(origin));
+    const isAllowed = allowedOrigins.some((pattern) =>
+      typeof pattern === 'string' ? pattern === origin : pattern.test(origin)
+    );
     if (isAllowed) {
       return callback(null, true);
     }
@@ -95,6 +99,7 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
 
