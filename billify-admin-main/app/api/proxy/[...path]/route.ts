@@ -3,19 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 function getBackendBaseUrls() {
-  const configuredBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "";
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "";
 
   if (configuredBaseUrl) {
     return [configuredBaseUrl.replace(/\/+$/, "")];
   }
 
-  return [
-    "http://127.0.0.1:5000/api",
-    "http://localhost:5000/api",
-    "http://127.0.0.1:5001/api",
-    "http://localhost:5001/api",
-  ];
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
 }
 
 function buildProxyResponse(response: Response, body: BodyInit | null) {
@@ -93,8 +87,7 @@ async function handler(
   } catch {
     return NextResponse.json(
       {
-        message:
-          "Backend API is unreachable. Start billify-backend on port 5000 or configure NEXT_PUBLIC_API_BASE_URL.",
+        message: "Backend API is unreachable or NEXT_PUBLIC_API_BASE_URL is not configured.",
       },
       { status: 502 },
     );

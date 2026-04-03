@@ -13,6 +13,42 @@ function normalizeApiBaseUrl(value?: string | null) {
   return trimmed ? trimmed.replace(/\/+$/, '') : null;
 }
 
+function getUrlHostname(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function isPrivateIpHostname(hostname: string) {
+  return (
+    hostname.startsWith('10.') ||
+    hostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  );
+}
+
+function shouldUseDerivedLocalFallback(configuredUrl: string | null) {
+  if (!configuredUrl) {
+    return true;
+  }
+
+  const hostname = getUrlHostname(configuredUrl);
+  if (!hostname) {
+    return false;
+  }
+
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname.endsWith('.local') ||
+    hostname.includes('ngrok') ||
+    isPrivateIpHostname(hostname)
+  );
+}
+
 function getDerivedExpoApiBaseUrl() {
   const hostCandidates = [
     constantsData.expoGoConfig?.debuggerHost,
@@ -40,7 +76,12 @@ function getDerivedExpoApiBaseUrl() {
 const configuredApiBaseUrl = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 const derivedExpoApiBaseUrl = normalizeApiBaseUrl(getDerivedExpoApiBaseUrl());
 const apiBaseUrlCandidates = Array.from(
-  new Set([configuredApiBaseUrl, derivedExpoApiBaseUrl].filter(Boolean) as string[]),
+  new Set(
+    [
+      configuredApiBaseUrl,
+      shouldUseDerivedLocalFallback(configuredApiBaseUrl) ? derivedExpoApiBaseUrl : null,
+    ].filter(Boolean) as string[],
+  ),
 );
 
 if (apiBaseUrlCandidates.length === 0) {
@@ -76,7 +117,7 @@ function shouldRetryWithFallback(status: number, baseUrl: string) {
   return status === 404 && /ngrok/i.test(baseUrl);
 }
 
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 30000;
 
 function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = FETCH_TIMEOUT_MS): Promise<Response> {
   return new Promise((resolve, reject) => {
@@ -92,6 +133,28 @@ function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = FETCH_T
   });
 }
 
+async function clearStoredAuthSession(reason: string) {
+  try {
+    await AsyncStorage.multiRemove(['token', 'user']);
+  } catch (error) {
+    apiLogger.warn('Failed clearing stored auth session', {
+      reason,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    setCachedToken(null);
+  }
+}
+
+function isUnauthorizedTokenError(error: unknown) {
+  const status = typeof error === 'object' && error && 'status' in error
+    ? Number((error as { status?: number }).status)
+    : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+
+  return status === 401 && /token failed|no token|jwt/i.test(message);
+}
+
 async function performApiRequest<T>(
   baseUrl: string,
   endpoint: string,
@@ -101,12 +164,15 @@ async function performApiRequest<T>(
   const url = `${baseUrl}${endpoint}`;
 
   const headers = await getApiHeaders(includeAuth);
+  const mergedHeaders: Record<string, string> = { ...headers };
+  if (fetchOptions.headers) {
+    const extra = fetchOptions.headers as Record<string, string>;
+    Object.assign(mergedHeaders, extra);
+  }
+  console.log(`[API] ${fetchOptions.method || 'GET'} ${url}`, 'Auth:', mergedHeaders['Authorization'] ? 'present' : 'missing');
   const response = await fetchWithTimeout(url, {
     ...fetchOptions,
-    headers: {
-      ...headers,
-      ...fetchOptions.headers,
-    },
+    headers: mergedHeaders,
   });
 
   if (!response.ok) {
@@ -190,18 +256,27 @@ export const apiLogger = {
 };
 
 // In-memory token cache to avoid async bridge calls on every request
-let _cachedToken: string | null = null;
+// Use `undefined` to mean "not yet resolved" vs `null` for "no token"
+let _cachedToken: string | null | undefined = undefined;
 
 export function setCachedToken(token: string | null) {
-  _cachedToken = token;
+  _cachedToken = token ?? null;
+  console.log('[API] setCachedToken:', token ? `${token.substring(0, 20)}...` : 'null');
 }
 
 async function resolveToken(): Promise<string | null> {
-  if (_cachedToken !== null) return _cachedToken;
+  // Already resolved (either a token string or explicit null)
+  if (_cachedToken !== undefined) {
+    console.log('[API] resolveToken (cached):', _cachedToken ? 'present' : 'null');
+    return _cachedToken;
+  }
   try {
-    _cachedToken = await AsyncStorage.getItem('token');
+    const stored = await AsyncStorage.getItem('token');
+    _cachedToken = stored ?? null;
+    console.log('[API] resolveToken (AsyncStorage):', _cachedToken ? 'present' : 'null');
   } catch {
     _cachedToken = null;
+    console.log('[API] resolveToken: AsyncStorage read failed');
   }
   return _cachedToken;
 }
@@ -210,15 +285,18 @@ async function resolveToken(): Promise<string | null> {
  * Get headers for API requests
  * Includes Authorization Bearer token if user is authenticated
  */
-export async function getApiHeaders(includeAuth = true): Promise<HeadersInit> {
-  const headers: HeadersInit = {
+export async function getApiHeaders(includeAuth = true): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   if (includeAuth) {
     const token = await resolveToken();
-    if (token) {
+    console.log('TOKEN:', token);
+    if (token && token.trim().length > 0) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('[API] No auth token available for authenticated request');
     }
   }
 
@@ -237,6 +315,12 @@ export async function apiRequest<T>(
   try {
     return await tryApiBaseUrls<T>(endpoint, fetchOptions, includeAuth);
   } catch (error) {
+    if (includeAuth && isUnauthorizedTokenError(error)) {
+      await clearStoredAuthSession(
+        error instanceof Error ? error.message : 'Unauthorized token error',
+      );
+    }
+
     if (error instanceof TypeError) {
       const errorMsg = error.message || 'Unknown network error';
       apiLogger.error(
@@ -246,10 +330,11 @@ export async function apiRequest<T>(
           error: errorMsg,
           baseURL: getApiBaseUrl(),
           apiBaseUrlCandidates,
+          timeoutMs: FETCH_TIMEOUT_MS,
         },
       );
       throw new Error(
-        `Network Error: Cannot reach backend. Tried: ${apiBaseUrlCandidates.join(', ')}. Make sure:\n1. Backend server is running\n2. EXPO_PUBLIC_API_BASE_URL points to your active ngrok URL or LAN URL\n3. ngrok tunnel is running and forwarding to port 5000\n\nError: ${errorMsg}`,
+        `Network Error: Cannot reach backend. Tried: ${apiBaseUrlCandidates.join(', ')}. Make sure:\n1. Backend server is running\n2. EXPO_PUBLIC_API_BASE_URL points to your active backend URL\n3. Hosted backends may need extra cold-start time\n\nError: ${errorMsg}`,
       );
     }
 

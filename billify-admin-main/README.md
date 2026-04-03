@@ -4,17 +4,13 @@ This admin panel is a standalone Next.js frontend that connects to the same shar
 
 ### Environment
 
-Create a `.env.local` file in `billify-admin-main` and set either of these values if your backend is not running on the same host at port `5000`:
+Create a `.env.local` file in `billify-admin-main` and set your deployed backend URL:
 
 ```bash
-REACT_APP_API_BASE_URL=http://<your-ip>:5000/api
-# or
-NEXT_PUBLIC_API_BASE_URL=http://<your-ip>:5000/api
+NEXT_PUBLIC_API_BASE_URL=https://your-backend.example.com/api
 ```
 
-`REACT_APP_API_BASE_URL` is mapped into `NEXT_PUBLIC_API_BASE_URL` through `next.config.ts`, so the admin app can stay aligned with the mobile config requirement.
-
-If neither env var is set, the admin app now uses a same-origin Next.js proxy in the browser and forwards requests to `http://127.0.0.1:5000/api` by default on the server.
+The admin app reads `process.env.NEXT_PUBLIC_API_BASE_URL` on both the client and server.
 
 ### Run
 

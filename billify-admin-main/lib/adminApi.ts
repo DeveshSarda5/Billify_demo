@@ -1,3 +1,5 @@
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
+
 export type AdminUser = {
   _id?: string;
   id?: string;
@@ -112,26 +114,6 @@ function getLocalAdminBootstrapCredentials() {
   return { email, password };
 }
 
-function getApiBaseUrl() {
-  if (typeof window !== "undefined") {
-    return "/api/proxy";
-  }
-
-  const configuredBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "";
-
-  return (configuredBaseUrl || "http://127.0.0.1:5000/api").replace(/\/+$/, "");
-}
-
-function parseErrorMessage(payload: unknown, fallback: string) {
-  if (!payload || typeof payload !== "object") {
-    return fallback;
-  }
-
-  const candidate = payload as { message?: string };
-  return candidate.message || fallback;
-}
-
 function isLocalDevelopmentHost(hostname: string) {
   return (
     hostname === "localhost" ||
@@ -195,49 +177,18 @@ export function shouldUseLocalAdminBootstrap() {
   return Boolean(getLocalAdminBootstrapCredentials()) && isLocalDevelopmentHost(window.location.hostname);
 }
 
-async function apiRequest<T>(endpoint: string, init: RequestInit = {}, useAuth = true): Promise<T> {
-  const apiBaseUrl = getApiBaseUrl();
+function getRequiredAdminToken() {
+  const token = getStoredAdminToken();
 
-  const headers = new Headers(init.headers || {});
-  headers.set("Content-Type", "application/json");
-
-  if (useAuth) {
-    const token = getStoredAdminToken();
-    if (!token) {
-      throw new Error("No admin session found");
-    }
-
-    headers.set("Authorization", `Bearer ${token}`);
+  if (!token) {
+    throw new Error("No admin session found");
   }
 
-  const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-    ...init,
-    headers,
-  });
-
-  if (!response.ok) {
-    let payload: unknown = null;
-    try {
-      payload = await response.json();
-    } catch {
-      payload = null;
-    }
-
-    throw new Error(parseErrorMessage(payload, `Request failed with status ${response.status}`));
-  }
-
-  return response.json() as Promise<T>;
+  return token;
 }
 
 export async function loginAdmin(email: string, password: string) {
-  const auth = await apiRequest<AuthResponse>(
-    "/auth/login",
-    {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    },
-    false,
-  );
+  const auth = await apiPost<AuthResponse>("/auth/login", { email, password });
 
   if (auth.user.role !== "admin") {
     throw new Error("This account does not have admin access.");
@@ -258,82 +209,77 @@ export async function bootstrapLocalAdminSession() {
 }
 
 export function fetchAdminProfile() {
-  return apiRequest<AdminUser>("/auth/me");
+  return apiGet<AdminUser>("/auth/me", { token: getRequiredAdminToken() });
 }
 
 export function getDashboardSummary() {
-  return apiRequest<DashboardSummary>("/admin/dashboard");
+  return apiGet<DashboardSummary>("/admin/dashboard", { token: getRequiredAdminToken() });
 }
 
 export function getAdminUsers() {
-  return apiRequest<AdminUser[]>("/admin/users");
+  return apiGet<AdminUser[]>("/admin/users", { token: getRequiredAdminToken() });
 }
 
 export function getAdminBills() {
-  return apiRequest<BillRecord[]>("/admin/bills");
+  return apiGet<BillRecord[]>("/admin/bills", { token: getRequiredAdminToken() });
 }
 
 export function getAdminPayments() {
-  return apiRequest<PaymentRecord[]>("/admin/payments");
+  return apiGet<PaymentRecord[]>("/admin/payments", { token: getRequiredAdminToken() });
 }
 
 export function getAdminSupportTickets() {
-  return apiRequest<SupportTicketRecord[]>("/admin/support");
+  return apiGet<SupportTicketRecord[]>("/admin/support", { token: getRequiredAdminToken() });
 }
 
 export function updateSupportTicket(id: string, payload: { response?: string; status?: string }) {
-  return apiRequest<{ success: boolean; ticket: SupportTicketRecord }>(`/admin/support/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
+  return apiPut<{ success: boolean; ticket: SupportTicketRecord }>(`/admin/support/${id}`, payload, {
+    token: getRequiredAdminToken(),
   });
 }
 
 export function getProducts() {
-  return apiRequest<ProductRecord[]>("/admin/products");
+  return apiGet<ProductRecord[]>("/admin/products", { token: getRequiredAdminToken() });
 }
 
 export function createProduct(payload: { barcode: string; name: string; category?: string; price: number; stock: number }) {
-  return apiRequest<ProductRecord>("/products", {
-    method: "POST",
-    body: JSON.stringify(payload),
+  return apiPost<ProductRecord>("/products", payload, {
+    token: getRequiredAdminToken(),
   });
 }
 
 export function updateProduct(id: string, payload: Partial<ProductRecord>) {
-  return apiRequest<ProductRecord>(`/admin/products/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
+  return apiPut<ProductRecord>(`/admin/products/${id}`, payload, {
+    token: getRequiredAdminToken(),
   });
 }
 
 export function deleteProduct(id: string) {
-  return apiRequest<{ success: boolean; message: string }>(`/admin/products/${id}`, {
-    method: "DELETE",
+  return apiDelete<{ success: boolean; message: string }>(`/admin/products/${id}`, {
+    token: getRequiredAdminToken(),
   });
 }
 
 // ─── Offers / Discounts ───────────────────────────────────────────────────────
 
 export function getAdminOffers() {
-  return apiRequest<OfferRecord[]>("/admin/offers");
+  return apiGet<OfferRecord[]>("/admin/offers", { token: getRequiredAdminToken() });
 }
 
 export function createOffer(payload: Omit<OfferRecord, "_id" | "createdAt" | "currentUsage">) {
-  return apiRequest<OfferRecord>("/admin/offers", {
-    method: "POST",
-    body: JSON.stringify(payload),
+  return apiPost<OfferRecord>("/admin/offers", payload, {
+    token: getRequiredAdminToken(),
   });
 }
 
 export function updateOffer(id: string, payload: Partial<Omit<OfferRecord, "_id" | "createdAt">>) {
-  return apiRequest<OfferRecord>(`/admin/offers/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
+  return apiPut<OfferRecord>(`/admin/offers/${id}`, payload, {
+    token: getRequiredAdminToken(),
   });
 }
 
 export function deleteOffer(id: string) {
-  return apiRequest<{ success: boolean; message: string }>(`/admin/offers/${id}`, {
-    method: "DELETE",
+  return apiDelete<{ success: boolean; message: string }>(`/admin/offers/${id}`, {
+    token: getRequiredAdminToken(),
   });
 }
