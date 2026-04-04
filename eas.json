@@ -5,18 +5,40 @@
   "build": {
     "development": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://billify-demo.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SUw1ykAIC5V35j",
+        "EXPO_PUBLIC_DEBUG_MODE": "true"
+      },
       "android": {
         "buildType": "apk"
       },
       "ios": {
-        "buildType": "simulator"
+        "simulator": true
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://billify-demo.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SUw1ykAIC5V35j",
+        "EXPO_PUBLIC_DEBUG_MODE": "false"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
-      "distribution": "store"
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://billify-demo.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SUw1ykAIC5V35j",
+        "EXPO_PUBLIC_DEBUG_MODE": "false",
+        "EXPO_PUBLIC_UPDATES_ENABLED": "true"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {

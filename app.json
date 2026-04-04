@@ -8,7 +8,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "extra": {
-      "apiBaseUrl": "$EXPO_PUBLIC_API_BASE_URL"
+      "apiBaseUrl": "$EXPO_PUBLIC_API_BASE_URL",
+      "eas": {
+        "projectId": "8bcdfff0-0a36-4c9e-b64e-6ebef23fc0f1"
+      }
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -26,8 +29,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],

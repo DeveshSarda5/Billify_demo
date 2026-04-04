@@ -76,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsLoggedIn(false);
       }
-      console.error("Profile refresh failed:", error);
+      // Network errors on startup are expected (Render cold-start); don't spam console
+      if (__DEV__) console.warn("Profile refresh failed:", error instanceof Error ? error.message : error);
     }
   };
 
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Login response missing token');
       }
 
-      console.log('[Auth] Login token received:', response.token.substring(0, 20) + '...');
+      if (__DEV__) console.log('[Auth] Login token received');
 
       const userData: User = {
         id: response.user.id,
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Verify token was stored correctly
       const storedToken = await AsyncStorage.getItem("token");
-      console.log('[Auth] Token stored in AsyncStorage:', storedToken ? 'yes' : 'NO');
+      if (__DEV__) console.log('[Auth] Token stored in AsyncStorage:', storedToken ? 'yes' : 'NO');
 
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       await AsyncStorage.removeItem("isGuest");

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { DEBUG_MODE as ENV_DEBUG_MODE, API_BASE_URL as ENV_API_BASE_URL } from './env';
 
 /**
  * Centralized API Configuration
@@ -107,11 +108,12 @@ function setActiveApiBaseUrl(url: string) {
   apiLogger.info('Switched API base URL', { activeApiBaseUrl, apiBaseUrlCandidates });
 }
 
-console.log('[API] Base URL candidates:', apiBaseUrlCandidates);
-console.log('[API] Active Base URL:', activeApiBaseUrl);
+if (__DEV__) {
+  console.log('[API] Base URL candidates:', apiBaseUrlCandidates);
+  console.log('[API] Active Base URL:', activeApiBaseUrl);
+}
 
-// Disable verbose per-request logging (major perf hit on RN bridge)
-export const DEBUG_MODE = false;
+export const DEBUG_MODE = ENV_DEBUG_MODE;
 
 function shouldRetryWithFallback(status: number, baseUrl: string) {
   return status === 404 && /ngrok/i.test(baseUrl);
@@ -169,7 +171,7 @@ async function performApiRequest<T>(
     const extra = fetchOptions.headers as Record<string, string>;
     Object.assign(mergedHeaders, extra);
   }
-  console.log(`[API] ${fetchOptions.method || 'GET'} ${url}`, 'Auth:', mergedHeaders['Authorization'] ? 'present' : 'missing');
+  if (__DEV__) console.log(`[API] ${fetchOptions.method || 'GET'} ${url}`, 'Auth:', mergedHeaders['Authorization'] ? 'present' : 'missing');
   const response = await fetchWithTimeout(url, {
     ...fetchOptions,
     headers: mergedHeaders,
@@ -199,11 +201,14 @@ async function tryApiBaseUrls<T>(
   fetchOptions: RequestInit,
   includeAuth: boolean,
 ): Promise<T> {
+  let firstError: unknown;
+
   // Fast-path: try the currently active URL first (skip stale candidates)
   if (activeApiBaseUrl) {
     try {
       return await performApiRequest<T>(activeApiBaseUrl, endpoint, fetchOptions, includeAuth);
     } catch (error) {
+      firstError = error;
       const status = typeof error === 'object' && error && 'status' in error
         ? Number((error as { status?: number }).status)
         : undefined;
@@ -214,13 +219,12 @@ async function tryApiBaseUrls<T>(
     }
   }
 
-  let lastError: unknown;
   for (const baseUrl of apiBaseUrlCandidates) {
     if (baseUrl === activeApiBaseUrl) continue; // already tried
     try {
       return await performApiRequest<T>(baseUrl, endpoint, fetchOptions, includeAuth);
     } catch (error) {
-      lastError = error;
+      firstError = firstError || error;
       const status = typeof error === 'object' && error && 'status' in error
         ? Number((error as { status?: number }).status)
         : undefined;
@@ -232,7 +236,13 @@ async function tryApiBaseUrls<T>(
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('API request failed');
+  // All candidates exhausted — re-throw the original error
+  if (firstError instanceof TypeError) {
+    throw new Error(
+      `Network Error: Cannot reach backend at ${activeApiBaseUrl || apiBaseUrlCandidates[0]}. The server may be starting up (Render free tier can take ~30s). Please try again.`,
+    );
+  }
+  throw firstError instanceof Error ? firstError : new Error('All API candidates failed for ' + endpoint);
 }
 
 /**
@@ -261,22 +271,22 @@ let _cachedToken: string | null | undefined = undefined;
 
 export function setCachedToken(token: string | null) {
   _cachedToken = token ?? null;
-  console.log('[API] setCachedToken:', token ? `${token.substring(0, 20)}...` : 'null');
+  if (__DEV__) console.log('[API] setCachedToken:', token ? `${token.substring(0, 20)}...` : 'null');
 }
 
 async function resolveToken(): Promise<string | null> {
   // Already resolved (either a token string or explicit null)
   if (_cachedToken !== undefined) {
-    console.log('[API] resolveToken (cached):', _cachedToken ? 'present' : 'null');
+    if (__DEV__) console.log('[API] resolveToken (cached):', _cachedToken ? 'present' : 'null');
     return _cachedToken;
   }
   try {
     const stored = await AsyncStorage.getItem('token');
     _cachedToken = stored ?? null;
-    console.log('[API] resolveToken (AsyncStorage):', _cachedToken ? 'present' : 'null');
+    if (__DEV__) console.log('[API] resolveToken (AsyncStorage):', _cachedToken ? 'present' : 'null');
   } catch {
     _cachedToken = null;
-    console.log('[API] resolveToken: AsyncStorage read failed');
+    if (__DEV__) console.log('[API] resolveToken: AsyncStorage read failed');
   }
   return _cachedToken;
 }
@@ -292,7 +302,7 @@ export async function getApiHeaders(includeAuth = true): Promise<Record<string, 
 
   if (includeAuth) {
     const token = await resolveToken();
-    console.log('TOKEN:', token);
+    if (__DEV__) console.log('[API] Token:', token ? 'present' : 'null');
     if (token && token.trim().length > 0) {
       headers['Authorization'] = `Bearer ${token}`;
     } else {
