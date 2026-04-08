@@ -32,6 +32,7 @@ app.use('/api/bills', require('./src/routes/bill.routes'));
 app.use('/api/products', require('./src/routes/product.routes'));
 app.use('/api/payments', require('./src/routes/payment.routes'));
 app.use('/api/support', require('./src/routes/support.routes'));
+app.use('/api/offers', require('./src/routes/offer.routes'));
 app.use('/api/admin', require('./src/routes/admin.routes'));
 
 // Health check
