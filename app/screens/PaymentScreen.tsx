@@ -97,9 +97,6 @@ export default function PaymentScreen({ route, navigation }: Props) {
         <AppCard>
           <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Amount to Pay</Text>
           <Text style={[styles.amount, { color: colors.text }]}>₹{total}</Text>
-          <Text style={[styles.testHint, { color: colors.warningText, backgroundColor: colors.warningBg }]}>
-            Test card: 4111 1111 1111 1111. Use any future expiry, CVV 123, OTP 1234. Make sure EXPO_PUBLIC_API_BASE_URL points to your active HTTPS ngrok /api URL.
-          </Text>
         </AppCard>
 
         <Pressable onPress={() => setShowModal(true)}>

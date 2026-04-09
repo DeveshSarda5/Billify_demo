@@ -134,7 +134,8 @@ export default function CartScreen() {
       <FlatList
         data={sortedItems}
         keyExtractor={(item) => item.barcode}
-        contentContainerStyle={{ padding: 16 }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         renderItem={({ item }) => {
           // Derived calculation: quantity × price (no mutation)
           const totalPrice = item.qty * item.price;
@@ -188,63 +189,63 @@ export default function CartScreen() {
             </View>
           );
         }}
-      />
-
-      {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {/* Coupon Input */}
-        <View style={styles.couponRow}>
-          <View style={[styles.couponInputContainer, { backgroundColor: colors.inputBackground, borderColor: colors.border }]}>
-            <Tag size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
-            <TextInput
-              placeholder="Enter Coupon Code"
-              placeholderTextColor={colors.inputPlaceholder}
-              style={[styles.couponInput, { color: colors.text }]}
-              value={coupon}
-              onChangeText={setCoupon}
-              autoCapitalize="characters"
-            />
-          </View>
-          <Pressable style={[styles.applyBtn, { backgroundColor: colors.text }]} onPress={applyCoupon}>
-            <Text style={[styles.applyText, { color: colors.background }]}>Apply</Text>
-          </Pressable>
-        </View>
-
-        {/* Available Coupons */}
-        {activeOffers.length > 0 && (
-          <View style={[styles.couponList, { backgroundColor: isDark ? colors.cardAlt : '#f0fdf4', borderColor: isDark ? colors.border : '#bbf7d0' }]}>
-            <Text style={[styles.couponListTitle, { color: isDark ? colors.primary : '#166534' }]}>Available Coupons:</Text>
-            {activeOffers.map((offer) => (
-              <View key={offer._id} style={styles.couponItem}>
-                <Text style={[styles.couponCode, { color: colors.primary }]}>{offer.couponCode}</Text>
-                <Text style={[styles.couponDesc, { color: isDark ? colors.primaryAlt : '#166534' }]}> - {getOfferDescription(offer)}</Text>
+        ListFooterComponent={
+          <View style={[styles.footer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* Coupon Input */}
+            <View style={styles.couponRow}>
+              <View style={[styles.couponInputContainer, { backgroundColor: colors.inputBackground, borderColor: colors.border }]}>
+                <Tag size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Enter Coupon Code"
+                  placeholderTextColor={colors.inputPlaceholder}
+                  style={[styles.couponInput, { color: colors.text }]}
+                  value={coupon}
+                  onChangeText={setCoupon}
+                  autoCapitalize="characters"
+                />
               </View>
-            ))}
-          </View>
-        )}
+              <Pressable style={[styles.applyBtn, { backgroundColor: colors.text }]} onPress={applyCoupon}>
+                <Text style={[styles.applyText, { color: colors.background }]}>Apply</Text>
+              </Pressable>
+            </View>
 
-        <View style={styles.summaryRow}>
-          <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Subtotal:</Text>
-          <Text style={[styles.summaryValue, { color: colors.text }]}>₹{total}</Text>
-        </View>
-        {discount > 0 && (
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.success }]}>Discount:</Text>
-            <Text style={[styles.summaryValue, { color: colors.success }]}>-₹{discount}</Text>
-          </View>
-        )}
-        <View style={[styles.summaryRow, { marginTop: 8 }]}>
-          <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
-          <Text style={[styles.totalValue, { color: colors.text }]}>₹{finalTotal}</Text>
-        </View>
+            {/* Available Coupons */}
+            {activeOffers.length > 0 && (
+              <View style={[styles.couponList, { backgroundColor: isDark ? colors.cardAlt : '#f0fdf4', borderColor: isDark ? colors.border : '#bbf7d0' }]}>
+                <Text style={[styles.couponListTitle, { color: isDark ? colors.primary : '#166534' }]}>Available Coupons:</Text>
+                {activeOffers.map((offer) => (
+                  <View key={offer._id} style={styles.couponItem}>
+                    <Text style={[styles.couponCode, { color: colors.primary }]}>{offer.couponCode}</Text>
+                    <Text style={[styles.couponDesc, { color: isDark ? colors.primaryAlt : '#166534' }]}> - {getOfferDescription(offer)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
-        <Pressable
-          style={styles.payBtn}
-          onPress={() => navigation.navigate('Payment', { total: finalTotal })}
-        >
-          <Text style={styles.payText}>Proceed to Pay</Text>
-        </Pressable>
-      </View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Subtotal:</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>₹{total}</Text>
+            </View>
+            {discount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.success }]}>Discount:</Text>
+                <Text style={[styles.summaryValue, { color: colors.success }]}>-₹{discount}</Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, { marginTop: 8 }]}>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>₹{finalTotal}</Text>
+            </View>
+
+            <Pressable
+              style={styles.payBtn}
+              onPress={() => navigation.navigate('Payment', { total: finalTotal })}
+            >
+              <Text style={styles.payText}>Proceed to Pay</Text>
+            </Pressable>
+          </View>
+        }
+      />
     </View>
   );
 }
