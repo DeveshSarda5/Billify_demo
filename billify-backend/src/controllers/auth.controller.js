@@ -27,7 +27,8 @@ const isOtpExpired = (expiresAt) => new Date(expiresAt).getTime() <= Date.now();
 // ================= SIGNUP =================
 exports.signup = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email: rawEmail, phone, password } = req.body;
+    const email = rawEmail?.trim().toLowerCase();
     const normalizedPhone = normalizePhone(phone || '');
 
     if (!normalizedPhone) {
@@ -68,7 +69,8 @@ exports.signup = async (req, res) => {
 // ================= LOGIN =================
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
+    const email = rawEmail?.trim().toLowerCase();
 
     const user = await User.findOne({ email });
 

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Alert } from 'r
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Trash2, CreditCard } from 'lucide-react-native';
+import { useAppTheme } from '../context/ThemeContext';
 
 interface Card {
     id: string;
@@ -11,6 +12,7 @@ interface Card {
 }
 
 export default function CardsScreen() {
+    const { colors } = useAppTheme();
     const [cardNumber, setCardNumber] = useState('');
     const [expiry, setExpiry] = useState('');
     const [cvv, setCvv] = useState('');
@@ -72,14 +74,14 @@ export default function CardsScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Manage Cards</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Manage Cards</Text>
 
-            <View style={styles.form}>
+            <View style={[styles.form, { backgroundColor: colors.card }]}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                     placeholder="1234 5678 9876 5432"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.inputPlaceholder}
                     keyboardType="numeric"
                     maxLength={16}
                     value={cardNumber}
@@ -87,17 +89,17 @@ export default function CardsScreen() {
                 />
                 <View style={styles.row}>
                     <TextInput
-                        style={[styles.input, { flex: 1, marginRight: 10 }]}
+                        style={[styles.input, { flex: 1, marginRight: 10, backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                         placeholder="MM/YY"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={colors.inputPlaceholder}
                         value={expiry}
                         onChangeText={setExpiry}
                         maxLength={5}
                     />
                     <TextInput
-                        style={[styles.input, { flex: 1 }]}
+                        style={[styles.input, { flex: 1, backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                         placeholder="123"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={colors.inputPlaceholder}
                         keyboardType="numeric"
                         maxLength={3}
                         value={cvv}
@@ -106,8 +108,9 @@ export default function CardsScreen() {
                     />
                 </View>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                     placeholder="Card Holder Name"
+                    placeholderTextColor={colors.inputPlaceholder}
                     value={holder}
                     onChangeText={setHolder}
                 />
@@ -117,28 +120,28 @@ export default function CardsScreen() {
                 </Pressable>
             </View>
 
-            <Text style={styles.subtitle}>Saved Cards</Text>
+            <Text style={[styles.subtitle, { color: colors.text }]}>Saved Cards</Text>
 
             <FlatList
                 data={savedCards}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: colors.card }]}>
                         <View style={styles.cardIcon}>
-                            <CreditCard size={24} color="#2196f3" />
+                            <CreditCard size={24} color={colors.primary} />
                         </View>
                         <View style={styles.cardInfo}>
-                            <Text style={styles.cardNumber}>{item.number}</Text>
-                            <Text style={styles.cardSub}>Exp: {item.expiry}</Text>
-                            <Text style={styles.cardSub}>{item.holder}</Text>
+                            <Text style={[styles.cardNumber, { color: colors.text }]}>{item.number}</Text>
+                            <Text style={[styles.cardSub, { color: colors.textMuted }]}>Exp: {item.expiry}</Text>
+                            <Text style={[styles.cardSub, { color: colors.textMuted }]}>{item.holder}</Text>
                         </View>
                         <Pressable onPress={() => handleDelete(item.id)}>
-                            <Trash2 size={20} color="#ef4444" />
+                            <Trash2 size={20} color={colors.danger} />
                         </Pressable>
                     </View>
                 )}
                 ListEmptyComponent={
-                    <Text style={styles.empty}>No saved cards</Text>
+                    <Text style={[styles.empty, { color: colors.textSoft }]}>No saved cards</Text>
                 }
             />
         </View>
@@ -149,7 +152,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f9fafb',
     },
     title: {
         fontSize: 24,
@@ -161,18 +163,14 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 10,
         marginTop: 20,
-        color: '#374151',
     },
     form: {
-        backgroundColor: '#fff',
         padding: 16,
         borderRadius: 12,
         marginBottom: 10,
     },
     input: {
-        backgroundColor: '#f9fafb',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
         borderRadius: 8,
         padding: 12,
         marginBottom: 12,
@@ -193,7 +191,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     card: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 10,
@@ -213,15 +210,12 @@ const styles = StyleSheet.create({
     cardNumber: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1f2937',
         marginBottom: 4,
     },
     cardSub: {
         fontSize: 12,
-        color: '#6b7280',
     },
     empty: {
-        color: '#9ca3af',
         fontStyle: 'italic',
         marginTop: 10,
     },

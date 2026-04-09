@@ -304,7 +304,12 @@ export const offersAPI = {
     async getActiveOffers() {
         try {
             return await apiGet<OfferResponse[]>('/offers/active', false);
-        } catch (error) {
+        } catch (error: any) {
+            // Return empty list if endpoint not deployed yet (404)
+            if (error?.status === 404) {
+                apiLogger.warn('Offers endpoint not available (404), returning empty list');
+                return [] as OfferResponse[];
+            }
             apiLogger.error('Failed to fetch active offers', error);
             throw error;
         }

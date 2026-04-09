@@ -5,6 +5,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
@@ -13,7 +14,8 @@ const INDIAN_CITIES = [
 ];
 
 export default function EditProfileScreen({ navigation }: Props) {
-    const { user, setUser } = useAuth(); // Assuming setUser is exposed in context, need to check
+    const { user, setUser } = useAuth();
+    const { colors } = useAppTheme();
     // If setUser is not exposed, we might need to manually update AsyncStorage and reload context or refetch
     // For now, let's assume we can update local state or user needs to re-login, but best UX is auto-update
 
@@ -76,35 +78,38 @@ export default function EditProfileScreen({ navigation }: Props) {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>Full Name</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
             <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter your name"
+                placeholderTextColor={colors.inputPlaceholder}
             />
 
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
             <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Enter your phone number"
+                placeholderTextColor={colors.inputPlaceholder}
                 keyboardType="phone-pad"
             />
 
-            <Text style={styles.label}>Location (City)</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Location (City)</Text>
             <View style={{ zIndex: 10 }}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]}
                     value={location}
                     onChangeText={handleLocationChange}
                     placeholder="Search city..."
+                    placeholderTextColor={colors.inputPlaceholder}
                     onFocus={() => location.length > 0 && setShowSuggestions(true)}
                 />
                 {showSuggestions && filteredCities.length > 0 && (
-                    <View style={styles.suggestionsList}>
+                    <View style={[styles.suggestionsList, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <FlatList
                             data={filteredCities}
                             keyExtractor={(item) => item}
@@ -113,10 +118,10 @@ export default function EditProfileScreen({ navigation }: Props) {
                             style={{ maxHeight: 150 }}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    style={styles.suggestionItem}
+                                    style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
                                     onPress={() => handleCitySelect(item)}
                                 >
-                                    <Text>{item}</Text>
+                                    <Text style={{ color: colors.text }}>{item}</Text>
                                 </TouchableOpacity>
                             )}
                         />
@@ -143,22 +148,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#fff',
     },
     label: {
         fontSize: 16,
         fontWeight: '500',
         marginBottom: 8,
-        color: '#374151',
     },
     input: {
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 8,
         padding: 12,
         marginBottom: 20,
         fontSize: 16,
-        backgroundColor: '#fff',
     },
     saveBtn: {
         backgroundColor: '#4caf50',
@@ -181,7 +182,6 @@ const styles = StyleSheet.create({
         top: 80,
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
         borderRadius: 8,
         elevation: 5,
         shadowColor: '#000',
@@ -189,11 +189,9 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         zIndex: 100,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
     },
     suggestionItem: {
         padding: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
 });

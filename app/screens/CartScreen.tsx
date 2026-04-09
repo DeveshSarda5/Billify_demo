@@ -4,12 +4,14 @@ import { useCart } from '../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { useState, useMemo, useEffect } from 'react';
 import { offersAPI, type OfferResponse } from '../services/api';
+import { useAppTheme } from '../context/ThemeContext';
 
 type SortOption = 'name' | 'quantity' | 'price' | 'none';
 
 export default function CartScreen() {
   const { items, updateQty, removeItem, total } = useCart();
   const navigation = useNavigation<any>();
+  const { colors, isDark } = useAppTheme();
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>('none');
@@ -80,8 +82,8 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
+      <View style={[styles.empty, { backgroundColor: colors.background }]}>
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>Your cart is empty</Text>
       </View>
     );
   }
@@ -89,40 +91,40 @@ export default function CartScreen() {
   const finalTotal = Math.max(0, total - discount);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Sort Controls */}
-      <View style={styles.sortControls}>
-        <Text style={styles.sortLabel}>Sort by:</Text>
+      <View style={[styles.sortControls, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.sortLabel, { color: colors.textMuted }]}>Sort by:</Text>
         <View style={styles.sortButtons}>
           <Pressable
-            style={[styles.sortBtn, sortBy === 'none' && styles.sortBtnActive]}
+            style={[styles.sortBtn, { backgroundColor: colors.background, borderColor: colors.border }, sortBy === 'none' && styles.sortBtnActive]}
             onPress={() => setSortBy('none')}
           >
-            <Text style={[styles.sortBtnText, sortBy === 'none' && styles.sortBtnTextActive]}>
+            <Text style={[styles.sortBtnText, { color: colors.textMuted }, sortBy === 'none' && styles.sortBtnTextActive]}>
               Default
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.sortBtn, sortBy === 'name' && styles.sortBtnActive]}
+            style={[styles.sortBtn, { backgroundColor: colors.background, borderColor: colors.border }, sortBy === 'name' && styles.sortBtnActive]}
             onPress={() => setSortBy('name')}
           >
-            <Text style={[styles.sortBtnText, sortBy === 'name' && styles.sortBtnTextActive]}>
+            <Text style={[styles.sortBtnText, { color: colors.textMuted }, sortBy === 'name' && styles.sortBtnTextActive]}>
               Name
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.sortBtn, sortBy === 'quantity' && styles.sortBtnActive]}
+            style={[styles.sortBtn, { backgroundColor: colors.background, borderColor: colors.border }, sortBy === 'quantity' && styles.sortBtnActive]}
             onPress={() => setSortBy('quantity')}
           >
-            <Text style={[styles.sortBtnText, sortBy === 'quantity' && styles.sortBtnTextActive]}>
+            <Text style={[styles.sortBtnText, { color: colors.textMuted }, sortBy === 'quantity' && styles.sortBtnTextActive]}>
               Qty
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.sortBtn, sortBy === 'price' && styles.sortBtnActive]}
+            style={[styles.sortBtn, { backgroundColor: colors.background, borderColor: colors.border }, sortBy === 'price' && styles.sortBtnActive]}
             onPress={() => setSortBy('price')}
           >
-            <Text style={[styles.sortBtnText, sortBy === 'price' && styles.sortBtnTextActive]}>
+            <Text style={[styles.sortBtnText, { color: colors.textMuted }, sortBy === 'price' && styles.sortBtnTextActive]}>
               Price
             </Text>
           </Pressable>
@@ -138,40 +140,40 @@ export default function CartScreen() {
           const totalPrice = item.qty * item.price;
           
           return (
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
               {/* Left side: Item name and per-piece price */}
               <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.pricePerPiece}>₹{item.price} per piece</Text>
+                <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.pricePerPiece, { color: colors.textMuted }]}>₹{item.price} per piece</Text>
               </View>
 
               {/* Right side: Quantity and total price */}
               <View style={styles.rightSection}>
-                <Text style={styles.qtyLabel}>Qty: {item.qty}</Text>
-                <Text style={styles.totalPrice}>₹{totalPrice}</Text>
+                <Text style={[styles.qtyLabel, { color: colors.textSoft }]}>Qty: {item.qty}</Text>
+                <Text style={[styles.totalPrice, { color: colors.primary }]}>₹{totalPrice}</Text>
               </View>
 
               <View style={styles.controlsRow}>
                 {/* Quantity controls */}
                 <View style={styles.qtyRow}>
                   <Pressable
-                    style={styles.qtyBtn}
+                    style={[styles.qtyBtn, { backgroundColor: isDark ? colors.cardAlt : '#e5f4ea' }]}
                     onPress={() =>
                       item.qty === 1
                         ? removeItem(item.barcode)
                         : updateQty(item.barcode, item.qty - 1)
                     }
                   >
-                    <Minus size={16} color="#1f2937" />
+                    <Minus size={16} color={colors.text} />
                   </Pressable>
 
-                  <Text style={styles.qty}>{item.qty}</Text>
+                  <Text style={[styles.qty, { color: colors.text }]}>{item.qty}</Text>
 
                   <Pressable
-                    style={styles.qtyBtn}
+                    style={[styles.qtyBtn, { backgroundColor: isDark ? colors.cardAlt : '#e5f4ea' }]}
                     onPress={() => updateQty(item.barcode, item.qty + 1)}
                   >
-                    <Plus size={16} color="#1f2937" />
+                    <Plus size={16} color={colors.text} />
                   </Pressable>
                 </View>
 
@@ -180,7 +182,7 @@ export default function CartScreen() {
                   onPress={() => removeItem(item.barcode)}
                   style={styles.deleteBtn}
                 >
-                  <Trash2 size={18} color="#ef4444" />
+                  <Trash2 size={18} color={colors.danger} />
                 </Pressable>
               </View>
             </View>
@@ -189,50 +191,51 @@ export default function CartScreen() {
       />
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {/* Coupon Input */}
         <View style={styles.couponRow}>
-          <View style={styles.couponInputContainer}>
-            <Tag size={18} color="#6b7280" style={{ marginRight: 8 }} />
+          <View style={[styles.couponInputContainer, { backgroundColor: colors.inputBackground, borderColor: colors.border }]}>
+            <Tag size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
             <TextInput
               placeholder="Enter Coupon Code"
-              style={styles.couponInput}
+              placeholderTextColor={colors.inputPlaceholder}
+              style={[styles.couponInput, { color: colors.text }]}
               value={coupon}
               onChangeText={setCoupon}
               autoCapitalize="characters"
             />
           </View>
-          <Pressable style={styles.applyBtn} onPress={applyCoupon}>
-            <Text style={styles.applyText}>Apply</Text>
+          <Pressable style={[styles.applyBtn, { backgroundColor: colors.text }]} onPress={applyCoupon}>
+            <Text style={[styles.applyText, { color: colors.background }]}>Apply</Text>
           </Pressable>
         </View>
 
         {/* Available Coupons */}
         {activeOffers.length > 0 && (
-          <View style={styles.couponList}>
-            <Text style={styles.couponListTitle}>Available Coupons:</Text>
+          <View style={[styles.couponList, { backgroundColor: isDark ? colors.cardAlt : '#f0fdf4', borderColor: isDark ? colors.border : '#bbf7d0' }]}>
+            <Text style={[styles.couponListTitle, { color: isDark ? colors.primary : '#166534' }]}>Available Coupons:</Text>
             {activeOffers.map((offer) => (
               <View key={offer._id} style={styles.couponItem}>
-                <Text style={styles.couponCode}>{offer.couponCode}</Text>
-                <Text style={styles.couponDesc}> - {getOfferDescription(offer)}</Text>
+                <Text style={[styles.couponCode, { color: colors.primary }]}>{offer.couponCode}</Text>
+                <Text style={[styles.couponDesc, { color: isDark ? colors.primaryAlt : '#166534' }]}> - {getOfferDescription(offer)}</Text>
               </View>
             ))}
           </View>
         )}
 
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Subtotal:</Text>
-          <Text style={styles.summaryValue}>₹{total}</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Subtotal:</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>₹{total}</Text>
         </View>
         {discount > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: '#22c55e' }]}>Discount:</Text>
-            <Text style={[styles.summaryValue, { color: '#22c55e' }]}>-₹{discount}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.success }]}>Discount:</Text>
+            <Text style={[styles.summaryValue, { color: colors.success }]}>-₹{discount}</Text>
           </View>
         )}
         <View style={[styles.summaryRow, { marginTop: 8 }]}>
-          <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalValue}>₹{finalTotal}</Text>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
+          <Text style={[styles.totalValue, { color: colors.text }]}>₹{finalTotal}</Text>
         </View>
 
         <Pressable
@@ -251,7 +254,6 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
 
   /* Empty state */
@@ -262,13 +264,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#6b7280',
     fontWeight: '500',
   },
 
   /* Cart item card */
   card: {
-    backgroundColor: '#fff',
     borderRadius: 18,
     padding: 14,
     marginBottom: 14,
@@ -281,13 +281,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1f2937',
   },
 
   pricePerPiece: {
     marginTop: 4,
     fontSize: 13,
-    color: '#6b7280',
     fontWeight: '500',
   },
 
@@ -299,14 +297,12 @@ const styles = StyleSheet.create({
 
   qtyLabel: {
     fontSize: 12,
-    color: '#9ca3af',
     marginBottom: 2,
   },
 
   totalPrice: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4caf50',
   },
 
   /* Controls row: Quantity buttons and delete */
@@ -324,7 +320,6 @@ const styles = StyleSheet.create({
   },
 
   qtyBtn: {
-    backgroundColor: '#e5f4ea',
     padding: 6,
     borderRadius: 8,
     justifyContent: 'center',
@@ -335,7 +330,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 14,
     fontWeight: '600',
-    color: '#1f2937',
     minWidth: 18,
     textAlign: 'center',
   },
@@ -348,8 +342,6 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
   },
 
   /* Coupon */
@@ -362,11 +354,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   couponInput: {
     flex: 1,
@@ -374,29 +364,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   applyBtn: {
-    backgroundColor: '#1f2937',
     borderRadius: 12,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   applyText: {
-    color: '#fff',
     fontWeight: '600',
   },
 
   /* Available Coupons */
   couponList: {
     marginBottom: 16,
-    backgroundColor: '#f0fdf4',
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#bbf7d0',
   },
   couponListTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#166534',
     marginBottom: 4,
   },
   couponItem: {
@@ -406,11 +391,9 @@ const styles = StyleSheet.create({
   couponCode: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#15803d',
   },
   couponDesc: {
     fontSize: 12,
-    color: '#166534',
   },
 
   /* Summary */
@@ -421,22 +404,18 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 15,
-    color: '#6b7280',
   },
   summaryValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1f2937',
   },
   totalLabel: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1f2937',
   },
   totalValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1f2937',
   },
 
   payBtn: {
@@ -455,16 +434,13 @@ const styles = StyleSheet.create({
 
   /* Sort Controls */
   sortControls: {
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   sortLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
     marginBottom: 6,
   },
   sortButtons: {
@@ -474,11 +450,9 @@ const styles = StyleSheet.create({
   },
   sortBtn: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: '#f9fafb',
   },
   sortBtnActive: {
     backgroundColor: '#4caf50',
@@ -487,7 +461,6 @@ const styles = StyleSheet.create({
   sortBtnText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6b7280',
   },
   sortBtnTextActive: {
     color: '#fff',

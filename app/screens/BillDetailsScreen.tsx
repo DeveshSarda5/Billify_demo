@@ -7,6 +7,7 @@ import { getRandomWatermark } from '../utils/locationUtils';
 import { useAuth } from '../context/AuthContext';
 import { getReadableRazorpayError, openRazorpayWebCheckout } from '../services/razorpayPayment';
 import { billsAPI } from '../services/api';
+import { useAppTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BillDetails'>;
 
@@ -36,6 +37,7 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
   const [watermark] = useState(getRandomWatermark());
   const { user } = useAuth();
   const [paying, setPaying] = useState(false);
+  const { colors, isDark } = useAppTheme();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -105,31 +107,31 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Watermark Overlay */}
       <View style={styles.watermarkContainer}>
-        <Text style={styles.watermarkText}>{watermark}</Text>
+        <Text style={[styles.watermarkText, { color: colors.text }]}>{watermark}</Text>
       </View>
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <Pressable onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#1f2937" />
+          <ArrowLeft size={24} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Bill Details</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Bill Details</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {/* Bill Summary */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Bill ID</Text>
-        <Text style={styles.value}>{currentBill._id.substring(0, 12)}...</Text>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.label, { color: colors.textMuted }]}>Bill ID</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{currentBill._id.substring(0, 12)}...</Text>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Date</Text>
-        <Text style={styles.value}>{formatDate(currentBill.createdAt)}</Text>
+        <Text style={[styles.label, { marginTop: 16, color: colors.textMuted }]}>Date</Text>
+        <Text style={[styles.value, { color: colors.text }]}>{formatDate(currentBill.createdAt)}</Text>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Status</Text>
-        <Text style={[styles.value, { color: currentBill.paymentStatus === 'paid' ? '#22c55e' : '#f97316' }]}>
+        <Text style={[styles.label, { marginTop: 16, color: colors.textMuted }]}>Status</Text>
+        <Text style={[styles.value, { color: currentBill.paymentStatus === 'paid' ? colors.success : '#f97316' }]}>
           {currentBill.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
         </Text>
       </View>
@@ -152,37 +154,37 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
       {/* Items */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Items</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Items</Text>
           <View style={styles.sortButtonsContainer}>
             <Pressable
-              style={[styles.sortItemBtn, itemSortType === 'price' && styles.activeSortItemBtn]}
+              style={[styles.sortItemBtn, { backgroundColor: colors.border }, itemSortType === 'price' && styles.activeSortItemBtn]}
               onPress={() => toggleItemSort('price')}
             >
-              <Text style={[styles.sortItemBtnText, itemSortType === 'price' && styles.activeSortItemBtnText]}>
+              <Text style={[styles.sortItemBtnText, { color: colors.textMuted }, itemSortType === 'price' && styles.activeSortItemBtnText]}>
                 Price {itemSortType === 'price' && (itemSortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </Pressable>
             <Pressable
-              style={[styles.sortItemBtn, itemSortType === 'quantity' && styles.activeSortItemBtn]}
+              style={[styles.sortItemBtn, { backgroundColor: colors.border }, itemSortType === 'quantity' && styles.activeSortItemBtn]}
               onPress={() => toggleItemSort('quantity')}
             >
-              <Text style={[styles.sortItemBtnText, itemSortType === 'quantity' && styles.activeSortItemBtnText]}>
+              <Text style={[styles.sortItemBtnText, { color: colors.textMuted }, itemSortType === 'quantity' && styles.activeSortItemBtnText]}>
                 Qty {itemSortType === 'quantity' && (itemSortOrder === 'asc' ? '↑' : '↓')}
               </Text>
             </Pressable>
           </View>
         </View>
-        <View style={styles.itemsCard}>
-          <View style={styles.itemHeader}>
-            <Text style={[styles.itemText, styles.itemName]}>Item</Text>
-            <Text style={[styles.itemText, styles.itemQty]}>Qty</Text>
-            <Text style={[styles.itemText, styles.itemPrice]}>Price</Text>
+        <View style={[styles.itemsCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.itemHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.itemText, styles.itemName, { color: colors.textMuted }]}>Item</Text>
+            <Text style={[styles.itemText, styles.itemQty, { color: colors.textMuted }]}>Qty</Text>
+            <Text style={[styles.itemText, styles.itemPrice, { color: colors.textMuted }]}>Price</Text>
           </View>
           {getSortedItems().map((item, idx) => (
             <View key={idx} style={styles.itemRow}>
-              <Text style={[styles.itemValue, styles.itemName]} numberOfLines={1}>{item.name}</Text>
-              <Text style={[styles.itemValue, styles.itemQty]}>{item.quantity}</Text>
-              <Text style={[styles.itemValue, styles.itemPrice]}>₹{(item.price * item.quantity).toFixed(2)}</Text>
+              <Text style={[styles.itemValue, styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.itemValue, styles.itemQty, { color: colors.text }]}>{item.quantity}</Text>
+              <Text style={[styles.itemValue, styles.itemPrice, { color: colors.text }]}>₹{(item.price * item.quantity).toFixed(2)}</Text>
             </View>
           ))}
         </View>
@@ -190,21 +192,21 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
 
       {/* Totals */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Totals</Text>
-        <View style={styles.totalsCard}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>₹{(currentBill.subtotal || currentBill.totalAmount).toFixed(2)}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Totals</Text>
+        <View style={[styles.totalsCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.totalRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Subtotal:</Text>
+            <Text style={[styles.totalValue, { color: colors.text }]}>₹{(currentBill.subtotal || currentBill.totalAmount).toFixed(2)}</Text>
           </View>
           {currentBill.tax !== undefined && currentBill.tax > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax (GST):</Text>
-              <Text style={styles.totalValue}>₹{currentBill.tax.toFixed(2)}</Text>
+            <View style={[styles.totalRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Tax (GST):</Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>₹{currentBill.tax.toFixed(2)}</Text>
             </View>
           )}
-          <View style={[styles.totalRow, styles.grandTotalRow]}>
-            <Text style={styles.grandTotalLabel}>Total Amount:</Text>
-            <Text style={styles.grandTotalValue}>₹{currentBill.totalAmount.toFixed(2)}</Text>
+          <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: colors.border }]}>
+            <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total Amount:</Text>
+            <Text style={[styles.grandTotalValue, { color: colors.primary }]}>₹{currentBill.totalAmount.toFixed(2)}</Text>
           </View>
         </View>
       </View>
@@ -212,12 +214,12 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
       {/* Exit Pass (if paid) */}
       {currentBill.paymentStatus === 'paid' && currentBill.exitPass && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Exit Pass</Text>
-          <View style={[styles.card, styles.exitPassCard]}>
-            <Text style={styles.success}>Payment Successful</Text>
-            <Text style={styles.passIdLabel}>Pass ID</Text>
-            <Text style={styles.passId}>{currentBill.exitPass}</Text>
-            <Text style={styles.passNote}>Show this at the exit gate</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Exit Pass</Text>
+          <View style={[styles.card, styles.exitPassCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.success, { color: colors.success }]}>Payment Successful</Text>
+            <Text style={[styles.passIdLabel, { color: colors.textMuted }]}>Pass ID</Text>
+            <Text style={[styles.passId, { color: colors.text }]}>{currentBill.exitPass}</Text>
+            <Text style={[styles.passNote, { color: colors.textMuted }]}>Show this at the exit gate</Text>
           </View>
         </View>
       )}
@@ -230,7 +232,6 @@ export default function BillDetailsScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   watermarkContainer: {
     position: 'absolute',
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
   watermarkText: {
     fontSize: 100,
     fontWeight: 'bold',
-    color: '#000',
+    opacity: 0.15,
     transform: [{ rotate: '-45deg' }],
   },
   header: {
@@ -252,14 +253,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
   },
   section: {
     paddingHorizontal: 16,
@@ -274,7 +272,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
   },
   sortButtonsContainer: {
     flexDirection: 'row',
@@ -292,25 +289,21 @@ const styles = StyleSheet.create({
   sortItemBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6b7280',
   },
   activeSortItemBtnText: {
     color: '#fff',
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     margin: 16,
     marginBottom: 0,
   },
   itemsCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
   },
   totalsCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
   },
@@ -339,21 +332,18 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   label: {
-    color: '#6b7280',
     fontSize: 14,
     marginBottom: 4,
   },
   value: {
     fontWeight: '600',
     fontSize: 16,
-    color: '#1f2937',
   },
   itemHeader: {
     flexDirection: 'row',
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   itemRow: {
     flexDirection: 'row',
@@ -362,11 +352,9 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
   },
   itemValue: {
     fontSize: 13,
-    color: '#1f2937',
   },
   itemName: {
     flex: 1,
@@ -385,41 +373,33 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   grandTotalRow: {
     borderBottomWidth: 0,
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   totalLabel: {
-    color: '#6b7280',
     fontSize: 14,
   },
   totalValue: {
     fontWeight: '600',
-    color: '#1f2937',
   },
   grandTotalLabel: {
-    color: '#1f2937',
     fontSize: 16,
     fontWeight: '700',
   },
   grandTotalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#4caf50',
   },
   success: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#22c55e',
     marginBottom: 12,
   },
   passIdLabel: {
-    color: '#6b7280',
     fontSize: 12,
     marginTop: 8,
   },
@@ -427,10 +407,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginTop: 4,
-    color: '#1f2937',
   },
   passNote: {
-    color: '#6b7280',
     fontSize: 12,
     marginTop: 12,
     textAlign: 'center',

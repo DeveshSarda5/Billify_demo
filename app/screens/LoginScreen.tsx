@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim().toLowerCase(), password);
       Alert.alert('Login Successful', 'Welcome back to Billify');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');

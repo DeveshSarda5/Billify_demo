@@ -128,8 +128,8 @@ export default function SignupScreen({ navigation }: any) {
     try {
       setLoading(true);
       setError('');
-      await signup({ name, email, password, phone });
-      await login(email, password);
+      await signup({ name, email: email.trim().toLowerCase(), password, phone });
+      await login(email.trim().toLowerCase(), password);
       Alert.alert('Success', 'Account created successfully!');
       navigation.reset({
         index: 0,
